@@ -81,10 +81,11 @@ module Houston
             end
             
             if data["type"] == "message" &&
-               data["user"] != bot_id
+               data["user"] != bot_id &&
+               !data["text"].blank?
               
-              channel = Houston::Slack::Channel.new find_channel(data["channel"])
-              user = Houston::Slack::User.new find_user(data["user"])
+              channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
+              user = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
               text = data["text"]
               
               Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{text}  (from: #{user}, channel: #{channel})\e[0m" if Rails.env.development?
