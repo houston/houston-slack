@@ -11,6 +11,14 @@ module Houston
         @last_name = profile["last_name"]
       end
       
+      def name
+        "#{first_name} #{last_name}"
+      end
+      
+      def to_s
+        "<#{id}|#{name}>"
+      end
+      
     end
   end
 end

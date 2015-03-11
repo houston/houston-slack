@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
   # https://blog.jcoglan.com/2013/05/06/websocket-driver-an-io-agnostic-websocket-module-or-why-most-protocol-libraries-arent/
   s.add_dependency "websocket-driver"
   s.add_dependency "multi_json"
+  s.add_dependency "faraday"
 end

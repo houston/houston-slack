@@ -9,20 +9,19 @@ module Houston
       
       def initialize
         @client = Houston::Slack::Driver.new
-        @open_channels = {}
+        @channel_id_by_name = {}
+        @user_ids_dm_ids = {}
       end
       
       
       
       def send_message(message, options={})
         channel = options.fetch(:channel) { raise ArgumentError, "Missing parameter :channel" }
-        
-        # Unless we've already got a valid channel ID, try to resolve it
-        channel_id = channel
-        channel_id = channels[channel_id] unless channel_id =~ /^[DGC]/
-        raise ArgumentError, "Couldn't find a channel named #{channel}" unless channel_id
-        
-        client.send(type: "message", channel: channel_id, text: message)
+        response = Faraday.post("https://slack.com/api/chat.postMessage", {
+          token: Houston::Slack.config.token,
+          channel: to_channel_id(channel),
+          text: message,
+          as_user: true })
       end
       
       
@@ -40,31 +39,30 @@ module Houston
       
       
     private
-      attr_reader :client, :bot_id, :bot_name, :users, :user_ids, :channels
+      attr_reader :client,
+                  :bot_id,
+                  :bot_name,
+                  :user_ids_dm_ids,
+                  :users_by_id,
+                  :groups_by_id,
+                  :channels_by_id,
+                  :user_id_by_name,
+                  :channel_id_by_name
       
       def __listen
         response = Faraday.post("https://slack.com/api/rtm.start", token: Houston::Slack.config.token)
-        response = JSON.parse response.body
+        response = MultiJson.load response.body
         websocket_url = response["url"]
         @bot_id = response["self"]["id"]
         @bot_name = response["self"]["name"]
-        @users = response["users"].index_by { |attrs| attrs["id"] }
         
-        @user_ids = Hash[response["users"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
-        @channels = Hash.new do |hash, key|
-          if key.start_with?("@")
-            user_id = user_ids[key]
-            response = Faraday.post("https://slack.com/api/im.open", {
-              token: Houston::Slack.config.token,
-              user: user_id})
-            response = JSON.parse response.body
-            response["channel"]["id"]
-          else
-            nil
-          end
-        end
-        @channels.merge! Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
-        @channels.merge! Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
+        @users_by_id = response["users"].index_by { |attrs| attrs["id"] }
+        @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
+        @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
+        
+        @user_id_by_name = Hash[response["users"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
+        @channel_id_by_name.merge! Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
+        @channel_id_by_name.merge! Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
         
         match_me = /<@#{bot_id}>|\b#{bot_name}\b/i
         
@@ -75,34 +73,37 @@ module Houston
         end
         
         client.on(:message) do |data|
-          if data["error"]
-            Rails.logger.error "\e[31m[slack:error] #{data["error"]["msg"]}\e[0m"
-          end
-          
-          if data["type"] == "message" &&
-             data["user"] != bot_id
-            
-            Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{data.pick("text", "channel", "user").inspect}\e[0m" if Rails.env.development?
-            
-            channel = Houston::Slack::Channel.new(data["channel"])
-            user = nil
-            text = data["text"]
-            
-            # Is someone talking directly to Houston?
-            direct_mention = channel.direct_message? || match_me === text
-            
-            Houston::Slack.config.responders.each do |responder|
-              
-              # Does the responder care whether the message is addressed to Houston?
-              # If so, skip responders whose dispositions don't match
-              next if responder[:mention] && responder[:mention] != direct_mention
-              
-              # Does the message match one of Houston's known responses?
-              next unless responder[:matcher] === text
-              
-              user ||= Houston::Slack::User.new(users[data["user"]])
-              Houston.observer.fire responder[:event], user, channel
+          begin
+            if data["error"]
+              Rails.logger.error "\e[31m[slack:error] #{data["error"]["msg"]}\e[0m"
             end
+            
+            if data["type"] == "message" &&
+               data["user"] != bot_id
+              
+              channel = Houston::Slack::Channel.new find_channel(data["channel"])
+              user = Houston::Slack::User.new find_user(data["user"])
+              text = data["text"]
+              
+              Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{text}  (from: #{user}, channel: #{channel})\e[0m" if Rails.env.development?
+              
+              # Is someone talking directly to Houston?
+              direct_mention = channel.direct_message? || match_me === text
+              
+              Houston::Slack.config.responders.each do |responder|
+                
+                # Does the responder care whether the message is addressed to Houston?
+                # If so, skip responders whose dispositions don't match
+                next if responder[:mention] && responder[:mention] != direct_mention
+                
+                # Does the message match one of Houston's known responses?
+                next unless responder[:matcher] === text
+                
+                Houston.observer.fire responder[:event], user, channel
+              end
+            end
+          rescue Exception
+            Houston.report_exception $!
           end
         end
         
@@ -112,6 +113,75 @@ module Houston
         Rails.logger.warn "\e[31mDisconnected from Slack; retrying\e[0m"
         sleep 5
         retry
+      end
+      
+      
+      
+      def to_channel_id(name)
+        return name if name =~ /^[DGC]/ # this already looks like a channel id
+        return get_dm_for_username(name) if name.start_with?("@")
+        channel_id_by_name.fetch(name) do
+          raise ArgumentError, "Couldn't find a channel named #{name}"
+        end
+      end
+      
+      def get_dm_for_username(name)
+        get_dm_for_user_id to_user_id(name)
+      end
+      
+      def to_user_id(name)
+        user_id_by_name.fetch(name)
+      end
+      
+      def get_dm_for_user_id(user_id)
+        user_ids_dm_ids[user_id] ||= begin
+          response = Faraday.post("https://slack.com/api/im.open", {
+            token: Houston::Slack.config.token,
+            user: user_id })
+          response = MultiJson.load response.body
+          response["channel"]["id"]
+        end
+      end
+      
+      
+      
+      def find_channel(id)
+        case id
+        when /^U/ then find_user(id)
+        when /^G/ then find_group(id)
+        when /^D/
+          user = find_user(get_user_id_for_dm(id))
+          { "id" => id,
+            "is_im" => true,
+            "name" => user["real_name"],
+            "user" => user }
+        else
+          channels_by_id.fetch(id)
+        end
+      end
+      
+      def find_user(id)
+        users_by_id.fetch(id) do
+          raise ArgumentError, "Unable to find a user with the ID #{id.inspect}"
+        end
+      end
+      
+      def find_group(id)
+        groups_by_id.fetch(id) do
+          raise ArgumentError, "Unable to find a group with the ID #{id.inspect}"
+        end
+      end
+      
+      def get_user_id_for_dm(dm)
+        user_id = user_ids_dm_ids.key(dm)
+        unless user_id
+          response = Faraday.post("https://slack.com/api/im.list", {token: Houston::Slack.config.token}).body
+          response = MultiJson.load(response)
+          user_ids_dm_ids.merge! Hash[response["ims"].map { |attrs| attrs.values_at("user", "id") }]
+          user_id = user_ids_dm_ids.key(dm)
+        end
+        raise ArgumentError, "Unable to find a user for the direct message ID #{dm.inspect}" unless user_id
+        user_id
       end
       
     end
