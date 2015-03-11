@@ -9,19 +9,20 @@ module Houston
       
       def initialize
         @client = Houston::Slack::Driver.new
-        @channel_id_by_name = {}
         @user_ids_dm_ids = {}
+        @users_by_id = {}
+        @user_id_by_name = {}
+        @groups_by_id = {}
+        @group_id_by_name = {}
+        @channels_by_id = {}
+        @channel_id_by_name = {}
       end
       
       
       
       def send_message(message, options={})
         channel = options.fetch(:channel) { raise ArgumentError, "Missing parameter :channel" }
-        response = Faraday.post("https://slack.com/api/chat.postMessage", {
-          token: Houston::Slack.config.token,
-          channel: to_channel_id(channel),
-          text: message,
-          as_user: true })
+        api("chat.postMessage", channel: to_channel_id(channel), text: message, as_user: true)
       end
       
       
@@ -44,25 +45,26 @@ module Houston
                   :bot_name,
                   :user_ids_dm_ids,
                   :users_by_id,
-                  :groups_by_id,
-                  :channels_by_id,
                   :user_id_by_name,
+                  :groups_by_id,
+                  :group_id_by_name,
+                  :channels_by_id,
                   :channel_id_by_name
       
       def __listen
-        response = Faraday.post("https://slack.com/api/rtm.start", token: Houston::Slack.config.token)
-        response = MultiJson.load response.body
+        response = api("rtm.start")
         websocket_url = response["url"]
         @bot_id = response["self"]["id"]
         @bot_name = response["self"]["name"]
         
-        @users_by_id = response["users"].index_by { |attrs| attrs["id"] }
         @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
-        @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
+        @channel_id_by_name = Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
         
+        @users_by_id = response["users"].index_by { |attrs| attrs["id"] }
         @user_id_by_name = Hash[response["users"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
-        @channel_id_by_name.merge! Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
-        @channel_id_by_name.merge! Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
+        
+        @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
+        @group_id_by_name = Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
         
         match_me = /<@#{bot_id}>|\b#{bot_name}\b/i
         
@@ -120,9 +122,26 @@ module Houston
       def to_channel_id(name)
         return name if name =~ /^[DGC]/ # this already looks like a channel id
         return get_dm_for_username(name) if name.start_with?("@")
-        channel_id_by_name.fetch(name) do
-          raise ArgumentError, "Couldn't find a channel named #{name}"
+        return to_group_id(name) unless name.start_with?("#")
+        
+        channel_id = channel_id_by_name[name]
+        unless channel_id
+          response = api("channels.list")
+          @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
+          @channel_id_by_name = Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
+          channel_id = channel_id_by_name[name]
         end
+        raise ArgumentError, "Couldn't find a channel named #{name}" unless channel_id
+        channel_id
+      end
+      
+      def to_group_id(name)
+        group_id = group_id_by_name[name]
+        # Bot Users are not allowed to call `groups.list`
+        # so I'm not sure how to look up a private group's ID
+        # when we aren't intending to call `rtm.start`.
+        raise ArgumentError, "Couldn't find a private group named #{name}" unless group_id
+        group_id
       end
       
       def get_dm_for_username(name)
@@ -130,17 +149,24 @@ module Houston
       end
       
       def to_user_id(name)
-        user_id_by_name.fetch(name)
+        user_id = user_id_by_name[name]
+        unless user_id
+          response = api("users.list")
+          @users_by_id = response["members"].index_by { |attrs| attrs["id"] }
+          @user_id_by_name = Hash[response["members"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
+          user_id = user_id_by_name[name]
+        end
+        raise ArgumentError, "Couldn't find a user named #{name}" unless user_id
+        user_id
       end
       
       def get_dm_for_user_id(user_id)
-        user_ids_dm_ids[user_id] ||= begin
-          response = Faraday.post("https://slack.com/api/im.open", {
-            token: Houston::Slack.config.token,
-            user: user_id })
-          response = MultiJson.load response.body
+        channel_id = user_ids_dm_ids[user_id] ||= begin
+          response = api("im.open", user: user_id)
           response["channel"]["id"]
         end
+        raise ArgumentError, "Unable to find a direct message ID for the user #{user_id.inspect}" unless channel_id
+        channel_id
       end
       
       
@@ -175,13 +201,22 @@ module Houston
       def get_user_id_for_dm(dm)
         user_id = user_ids_dm_ids.key(dm)
         unless user_id
-          response = Faraday.post("https://slack.com/api/im.list", {token: Houston::Slack.config.token}).body
-          response = MultiJson.load(response)
+          response = api("im.list")
           user_ids_dm_ids.merge! Hash[response["ims"].map { |attrs| attrs.values_at("user", "id") }]
           user_id = user_ids_dm_ids.key(dm)
         end
         raise ArgumentError, "Unable to find a user for the direct message ID #{dm.inspect}" unless user_id
         user_id
+      end
+      
+      
+      
+      def api(command, options={})
+        response = Faraday.post(
+          "https://slack.com/api/#{command}",
+          options.merge(token: Houston::Slack.config.token))
+        response = MultiJson.load(response.body)
+        response
       end
       
     end
