@@ -22,7 +22,11 @@ module Houston
       
       def send_message(message, options={})
         channel = options.fetch(:channel) { raise ArgumentError, "Missing parameter :channel" }
-        api("chat.postMessage", channel: to_channel_id(channel), text: message, as_user: true)
+        api("chat.postMessage",
+          channel: to_channel_id(channel),
+          text: message,
+          as_user: true, # post as the authenticated user (rather than as slackbot)
+          link_names: 1) # find and link channel names and user names
       end
       
       
