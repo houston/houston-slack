@@ -11,9 +11,18 @@ module Houston
         @type = :group if attributes["is_group"]
       end
       
-      def reply(message)
-        Houston::Slack.connection.send_message(message, channel: id)
+      def reply(*messages)
+        messages.flatten!
+        return if messages.empty?
+        
+        Houston::Slack.connection.send_message(messages[0], channel: id)
+        messages[1..-1].each do |message|
+          Rails.logger.debug "\e[35m [slack:reply] Typing for %.2f seconds\e[0m" % [message.length / Houston::Slack.config.typing_speed] if Rails.env.development?
+          sleep message.length / Houston::Slack.config.typing_speed
+          Houston::Slack.connection.send_message(message, channel: id)
+        end
       end
+      alias :say :reply
       
       def direct_message?
         type == :direct_message

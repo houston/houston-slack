@@ -1,5 +1,8 @@
-require "houston/slack/driver"
 require "houston/slack/channel"
+require "houston/slack/conversation"
+require "houston/slack/driver"
+require "houston/slack/event"
+require "houston/slack/listener"
 require "houston/slack/user"
 require "faraday"
 
@@ -84,29 +87,42 @@ module Houston
               Rails.logger.error "\e[31m[slack:error] #{data["error"]["msg"]}\e[0m"
             end
             
+            message = data["text"]
+            
             if data["type"] == "message" &&
                data["user"] != bot_id &&
-               !data["text"].blank?
+               !message.blank?
               
               channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
-              user = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
-              text = data["text"]
-              
-              Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{text}  (from: #{user}, channel: #{channel})\e[0m" if Rails.env.development?
+              sender = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
               
               # Is someone talking directly to Houston?
-              direct_mention = channel.direct_message? || match_me === text
+              direct_mention = channel.direct_message? || match_me === message
               
-              Houston::Slack.config.responders.each do |responder|
-                
-                # Does the responder care whether the message is addressed to Houston?
-                # If so, skip responders whose dispositions don't match
-                next if responder[:mention] && responder[:mention] != direct_mention
+              Houston::Slack.config.listeners.each do |listener|
+                # To trigger a listener, Houston must either be directly
+                # spoken to or in an active conversation about something.
+                #
+                # Skip passive listeners if Houston hasn't been mentioned
+                next unless direct_mention or listener.conversation
                 
                 # Does the message match one of Houston's known responses?
-                next unless responder[:matcher] === text
+                match_data = listener.match message
+                next unless match_data
                 
-                Houston.observer.fire responder[:event], user, channel
+                e = Houston::Slack::Event.new(
+                  message: message,
+                  match_data: match_data,
+                  channel: channel,
+                  sender: sender,
+                  listener: listener)
+                
+                # Skip listeners if they are not part of this conversation
+                next unless direct_mention or listener.conversation.includes?(e)
+                
+                Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{message}  (from: #{sender}, channel: #{channel})\e[0m"
+                
+                listener.call(e)
               end
             end
           rescue Exception

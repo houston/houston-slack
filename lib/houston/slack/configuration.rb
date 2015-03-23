@@ -1,9 +1,13 @@
+require "houston/slack/listener"
+require "thread_safe"
+
 module Houston::Slack
   class Configuration
-    attr_reader :responders
+    attr_reader :listeners
     
     def initialize
-      @responders = []
+      @listeners = ThreadSafe::Array.new
+      @typing_speed = 100.0
       config = Houston.config.module(:slack).config
       instance_eval(&config) if config
     end
@@ -15,18 +19,15 @@ module Houston::Slack
       @token
     end
     
-    def respond_to(matcher, &block)
-      event = "slack:message:#{matcher}"
-      @responders.push(matcher: matcher, event: event, mention: true)
-      Houston.observer.on(event, &block)
-      event
+    def typing_speed(*args)
+      @typing_speed = args.first.to_f if args.any?
+      @typing_speed
     end
     
-    def overhear(matcher, &block)
-      event = "slack:message:#{matcher}"
-      @responders.push(matcher: matcher, event: event, mention: false)
-      Houston.observer.on(event, &block)
-      event
+    def listen_for(matcher, &block)
+      Listener.new(matcher, block).tap do |listener|
+        @listeners.push listener
+      end
     end
     
   end
