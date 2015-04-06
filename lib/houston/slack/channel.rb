@@ -13,10 +13,14 @@ module Houston
       
       def reply(*messages)
         messages.flatten!
-        return if messages.empty?
+        first_message = messages.shift
+        return unless first_message
         
-        Houston::Slack.connection.send_message(messages[0], channel: id)
-        messages[1..-1].each do |message|
+        message_options = {}
+        message_options = messages.shift if messages.length == 1 && messages[0].is_a?(Hash)
+        Houston::Slack.connection.send_message(first_message, message_options.merge(channel: id))
+        
+        Array(messages[1..-1]).each do |message|
           Rails.logger.debug "\e[35m [slack:reply] Typing for %.2f seconds\e[0m" % [message.length / Houston::Slack.config.typing_speed] if Rails.env.development?
           sleep message.length / Houston::Slack.config.typing_speed
           Houston::Slack.connection.send_message(message, channel: id)

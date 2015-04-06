@@ -3,13 +3,22 @@ module Houston::Slack
     attr_reader :matcher
     attr_accessor :conversation
     
-    def initialize(matcher, callback)
+    def initialize(matcher, direct, callback)
       @matcher = matcher.freeze
+      @direct = direct
       @callback = callback
     end
     
     def match(message)
       matcher.match(message)
+    end
+    
+    def direct?
+      @direct
+    end
+    
+    def indirect?
+      !direct?
     end
     
     def stop_listening!

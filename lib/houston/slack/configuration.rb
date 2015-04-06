@@ -25,7 +25,13 @@ module Houston::Slack
     end
     
     def listen_for(matcher, &block)
-      Listener.new(matcher, block).tap do |listener|
+      Listener.new(matcher, true, block).tap do |listener|
+        @listeners.push listener
+      end
+    end
+    
+    def overhear(matcher, &block)
+      Listener.new(matcher, false, block).tap do |listener|
         @listeners.push listener
       end
     end
