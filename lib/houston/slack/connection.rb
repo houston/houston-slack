@@ -11,6 +11,7 @@ module Houston
     class Connection
       EVENT_MESSAGE = "message".freeze
       EVENT_GROUP_JOINED = "group_joined".freeze
+      EVENT_USER_JOINED = "team_join".freeze
       
       def initialize
         @client = Houston::Slack::Driver.new
@@ -97,6 +98,11 @@ module Houston
               group = data["channel"]
               @groups_by_id[group["id"]] = group
               @group_id_by_name[group["name"]] = group["id"]
+              
+            when EVENT_USER_JOINED
+              user = data["user"]
+              @users_by_id[user["id"]] = user
+              @user_id_by_name[user["name"]] = user["id"]
               
             when EVENT_MESSAGE
               message = data["text"]
