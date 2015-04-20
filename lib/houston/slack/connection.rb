@@ -259,8 +259,12 @@ module Houston
         response = Faraday.post(
           "https://slack.com/api/#{command}",
           options.merge(token: Houston::Slack.config.token))
-        response = MultiJson.load(response.body)
-        response
+        MultiJson.load(response.body)
+
+      rescue MultiJson::ParseError
+        $!.additional_information[:response_body] = response.body
+        $!.additional_information[:response_status] = response.status
+        raise
       end
       
     end
