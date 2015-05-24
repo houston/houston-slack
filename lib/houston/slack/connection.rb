@@ -43,11 +43,29 @@ module Houston
         puts "\e[94mConnecting to Slack\e[0m"
         Thread.new do
           begin
+            @connected_at = Time.now
+            @listening = true
             __listen
+
+          rescue Errno::EPIPE
+            # We got disconnected retry
+            Rails.logger.warn "\e[31mDisconnected from Slack; retrying\e[0m"
+            sleep 5
+            retry
+
           rescue Exception
+            Houston.report_exception $!
+            retry unless (Time.now - @connected_at) < 60
+            @listening = false
             puts  "\e[31mDisconnected from Slack: #{$!.message}\n#{$!.backtrace}\e[0m"
           end
         end
+      end
+      
+      attr_reader :connected_at
+      
+      def listening?
+        @listening
       end
       
       
@@ -154,11 +172,6 @@ module Houston
         end
         
         client.main_loop
-      rescue Errno::EPIPE
-        # We got disconnected retry
-        Rails.logger.warn "\e[31mDisconnected from Slack; retrying\e[0m"
-        sleep 5
-        retry
       end
       
       

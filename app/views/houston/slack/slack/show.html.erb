@@ -1,0 +1,12 @@
+<h1 class="project-banner space-below affix-top">
+  Slack
+</h1>
+
+<% if @connection.listening? %>
+  <p>Connected since <%= @connection.connected_at %></p>
+<% else %>
+  <p>Disconnected!</p>
+  <%= form_tag "/slack/connect" do %>
+    <button class="btn btn-primary" type="submit">Reconnect</button>
+  <% end %>
+<% end %>
