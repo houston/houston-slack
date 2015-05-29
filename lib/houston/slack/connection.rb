@@ -103,6 +103,7 @@ module Houston
         
         client.on(:error) do |*args|
           Rails.logger.error "\e[31m[slack:error] #{args.inspect}\e[0m"
+          Houston.observer.fire "slack:error", args
         end
         
         client.on(:message) do |data|
