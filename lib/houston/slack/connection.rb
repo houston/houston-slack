@@ -14,7 +14,6 @@ module Houston
       EVENT_USER_JOINED = "team_join".freeze
       
       def initialize
-        @client = Houston::Slack::Driver.new
         @user_ids_dm_ids = {}
         @users_by_id = {}
         @user_id_by_name = {}
@@ -99,6 +98,7 @@ module Houston
         
         match_me = /<@#{bot_id}>|\b#{bot_name}\b/i
         
+        @client = Houston::Slack::Driver.new
         client.connect_to websocket_url
         
         client.on(:error) do |*args|
@@ -173,6 +173,12 @@ module Houston
         end
         
         client.main_loop
+        
+      rescue EOFError
+        # Slack hung up on us, we'll ask for a new WebSocket URL
+        # and reconnect.
+        Rails.logger.warn "\e[33m[slack:error] Websocket Driver received EOF; reconnecting\e[0m"
+        retry
       end
       
       
