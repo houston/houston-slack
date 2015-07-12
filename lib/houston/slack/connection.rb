@@ -12,6 +12,7 @@ module Houston
       EVENT_MESSAGE = "message".freeze
       EVENT_GROUP_JOINED = "group_joined".freeze
       EVENT_USER_JOINED = "team_join".freeze
+      ME = "@houston".freeze
       
       def initialize
         @user_ids_dm_ids = {}
@@ -130,8 +131,14 @@ module Houston
                 channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
                 sender = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
                 
+                # Normalize mentions of Houston
+                message.gsub! match_me, ME
+                
+                # Normalize other parts of the message
+                message = normalize_message(message)
+                
                 # Is someone talking directly to Houston?
-                direct_mention = channel.direct_message? || match_me === message
+                direct_mention = channel.direct_message? || message[ME]
                 
                 Houston::Slack.config.listeners.each do |listener|
                   # Listeners come in two flavors: direct and indirect
@@ -285,6 +292,11 @@ module Houston
         $!.additional_information[:response_body] = response.body
         $!.additional_information[:response_status] = response.status
         raise
+      end
+      
+      def normalize_message(message)
+        # !todo: strip punctuation, white space, etc
+        message.strip
       end
       
     end
