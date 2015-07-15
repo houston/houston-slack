@@ -4,6 +4,7 @@ require "houston/slack/driver"
 require "houston/slack/event"
 require "houston/slack/listener"
 require "houston/slack/user"
+require "houston/slack/errors"
 require "faraday"
 
 module Houston
@@ -80,22 +81,28 @@ module Houston
                   :groups_by_id,
                   :group_id_by_name,
                   :channels_by_id,
-                  :channel_id_by_name
+                  :channel_id_by_name,
+                  :websocket_url
       
       def __listen
         response = api("rtm.start")
-        websocket_url = response["url"]
-        @bot_id = response["self"]["id"]
-        @bot_name = response["self"]["name"]
-        
-        @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
-        @channel_id_by_name = Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
-        
-        @users_by_id = response["users"].index_by { |attrs| attrs["id"] }
-        @user_id_by_name = Hash[response["users"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
-        
-        @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
-        @group_id_by_name = Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
+
+        begin
+          @websocket_url = response.fetch("url")
+          @bot_id = response.fetch("self").fetch("id")
+          @bot_name = response.fetch("self").fetch("name")
+          
+          @channels_by_id = response.fetch("channels").index_by { |attrs| attrs.fetch("id") }
+          @channel_id_by_name = Hash[response.fetch("channels").map { |attrs| ["##{attrs.fetch("name")}", attrs.fetch("id")] }]
+          
+          @users_by_id = response.fetch("users").index_by { |attrs| attrs.fetch("id") }
+          @user_id_by_name = Hash[response.fetch("users").map { |attrs| ["@#{attrs.fetch("name")}", attrs.fetch("id")] }]
+          
+          @groups_by_id = response.fetch("groups").index_by { |attrs| attrs.fetch("id") }
+          @group_id_by_name = Hash[response.fetch("groups").map { |attrs| [attrs.fetch("name"), attrs.fetch("id")] }]
+        rescue KeyError
+          raise ResponseError.new(response, $!.message)
+        end
         
         match_me = /<@#{bot_id}>|\b#{bot_name}\b/i
         
