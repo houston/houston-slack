@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.version     = Houston::Slack::VERSION
   s.authors     = ["Bob Lail"]
   s.email       = ["bob.lailfamily@gmail.com"]
-  s.homepage    = "TODO"
+  s.homepage    = "https://github.com/houstonmc/houston-slack"
   s.summary     = "Integrates Houston with Slack"
   s.description = "Allows Houston to listen to conversations on Slack and respond"
 
