@@ -41,8 +41,7 @@ module Houston
       
       
       def listen!
-        puts "\e[94m[slack] Connecting to Slack\e[0m"
-        Thread.new do
+        Houston.daemonize "slack" do
           begin
             @connected_at = Time.now
             @listening = true
@@ -50,18 +49,14 @@ module Houston
 
           rescue Errno::EPIPE
             # We got disconnected retry
-            Rails.logger.warn "\e[31m[slack] Disconnected from Slack; retrying\e[0m"
+            Rails.logger.warn "\e[31m[daemon:slack] Disconnected from Slack; retrying\e[0m"
+            Houston.observer.fire "daemon:#{name}:reconnecting"
             sleep 5
             retry
-
-          rescue Exception
-            Houston.report_exception $!
-            retry unless (Time.now - @connected_at) < 60
-            @listening = false
-            Rails.logger.error "\e[31m[slack] Disconnected from Slack: \e[1m#{$!.class}\e[0m"
-            Rails.logger.error "#{$!.message}\n#{$!.backtrace}"
           end
         end
+
+        @listening = false
       end
       
       attr_reader :connected_at
