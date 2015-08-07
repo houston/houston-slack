@@ -65,6 +65,10 @@ module Houston
         @listening
       end
       
+      def channels
+        user_id_by_name.keys + group_id_by_name.keys + channel_id_by_name.keys
+      end
+      
       
       
     private
