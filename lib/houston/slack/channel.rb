@@ -40,8 +40,13 @@ module Houston
       alias :group? :private_group?
       alias :private? :private_group?
       
+      def inspect
+        "<Houston::Slack::Channel id=\"#{id}\" name=\"#{name}\">"
+      end
+      
       def to_s
-        "<#{id}|#{name}>"
+        return name if private?
+        "##{name}"
       end
       
     end
