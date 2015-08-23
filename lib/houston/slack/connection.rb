@@ -36,6 +36,8 @@ module Houston
           as_user: true, # post as the authenticated user (rather than as slackbot)
           link_names: 1} # find and link channel names and user names
         params.merge!(attachments: MultiJson.dump(attachments)) if attachments.any?
+        params.merge!(options.slice(:username, :as_user, :parse, :link_names,
+          :unfurl_links, :unfurl_media, :icon_url, :icon_emoji))
         api("chat.postMessage", params)
       end
       
