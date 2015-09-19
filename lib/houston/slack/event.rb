@@ -19,6 +19,11 @@ module Houston::Slack
       channel.reply nil, attachments: attachments
     end
     
+    def user
+      return @user if defined?(@user)
+      @user = ::User.find_by_email_address(sender.email)
+    end
+    
     def reply(*args)
       channel.reply(*args)
     end
