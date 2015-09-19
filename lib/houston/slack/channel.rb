@@ -13,9 +13,9 @@ module Houston
       
       def reply(*messages)
         messages.flatten!
-        first_message = messages.shift
-        return unless first_message
+        return unless messages.any?
         
+        first_message = messages.shift
         message_options = {}
         message_options = messages.shift if messages.length == 1 && messages[0].is_a?(Hash)
         Houston::Slack.connection.send_message(first_message, message_options.merge(channel: id))

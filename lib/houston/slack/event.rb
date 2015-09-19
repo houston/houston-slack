@@ -15,6 +15,10 @@ module Houston::Slack
       @listener = listener
     end
     
+    def unfurl(*attachments)
+      channel.reply nil, attachments: attachments
+    end
+    
     def reply(*args)
       channel.reply(*args)
     end
