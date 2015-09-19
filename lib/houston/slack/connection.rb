@@ -90,7 +90,7 @@ module Houston
         response = api("rtm.start")
 
         begin
-          @websocket_url = response.fetch("url")
+          @websocket_url = response.fetch("url") # <-- TODO: if the response is not OK; this won't be present
           @bot_id = response.fetch("self").fetch("id")
           @bot_name = response.fetch("self").fetch("name")
           
