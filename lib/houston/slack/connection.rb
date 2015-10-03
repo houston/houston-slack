@@ -49,8 +49,15 @@ module Houston
             @listening = true
             __listen
 
+          rescue MigrationInProgress
+            # Slack is migrating our team to another server
+            Rails.logger.warn "\e[33m[daemon:slack] migration in progress\e[0m"
+            Houston.observer.fire "daemon:#{name}:reconnecting"
+            sleep 5
+            retry
+
           rescue Errno::EPIPE
-            # We got disconnected retry
+            # We got disconnected. Retry
             Rails.logger.warn "\e[31m[daemon:slack] Disconnected from Slack; retrying\e[0m"
             Houston.observer.fire "daemon:#{name}:reconnecting"
             sleep 5
@@ -89,8 +96,16 @@ module Houston
       def __listen
         response = api("rtm.start")
 
+        unless response["ok"]
+          if response["error"] == "migration_in_progress"
+            raise MigrationInProgress
+          else
+            raise ResponseError.new(response, response["error"])
+          end
+        end
+
         begin
-          @websocket_url = response.fetch("url") # <-- TODO: if the response is not OK; this won't be present
+          @websocket_url = response.fetch("url")
           @bot_id = response.fetch("self").fetch("id")
           @bot_name = response.fetch("self").fetch("name")
           
