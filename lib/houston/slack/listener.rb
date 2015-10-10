@@ -2,30 +2,30 @@ module Houston::Slack
   class Listener
     attr_reader :matcher
     attr_accessor :conversation
-    
+
     def initialize(matcher, direct, callback)
       @matcher = matcher.freeze
       @direct = direct
       @callback = callback
     end
-    
+
     def match(message)
       matcher.match(message)
     end
-    
+
     def direct?
       @direct
     end
-    
+
     def indirect?
       !direct?
     end
-    
+
     def stop_listening!
       Houston::Slack.config.listeners.delete self
       self
     end
-    
+
     def call(e)
       Thread.new do
         begin
@@ -38,6 +38,6 @@ module Houston::Slack
         end
       end
     end
-    
+
   end
 end
