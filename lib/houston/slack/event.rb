@@ -15,10 +15,6 @@ module Houston::Slack
       @listener = listener
     end
 
-    def unfurl(*attachments)
-      channel.reply nil, attachments: attachments
-    end
-
     def user
       return @user if defined?(@user)
       @user = sender && ::User.find_by_email_address(sender.email)
