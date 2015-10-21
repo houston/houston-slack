@@ -232,9 +232,12 @@ module Houston
 
       def to_group_id(name)
         group_id = group_id_by_name[name]
-        # Bot Users are not allowed to call `groups.list`
-        # so I'm not sure how to look up a private group's ID
-        # when we aren't intending to call `rtm.start`.
+        unless group_id
+          response = api("groups.list")
+          @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
+          @group_id_by_name = Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
+          group_id = group_id_by_name[name]
+        end
         raise ArgumentError, "Couldn't find a private group named #{name}" unless group_id
         group_id
       end
