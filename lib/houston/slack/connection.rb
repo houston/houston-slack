@@ -323,6 +323,8 @@ module Houston
       end
 
       def normalize_message(message)
+        message = message.gsub(/<([@#]?)([UC][^>]+)>/) { |match|
+          (channel = find_channel($2)) ? "#{$1}#{channel["name"]}" : match }
         # !todo: strip punctuation, white space, etc
         message.strip
       end
