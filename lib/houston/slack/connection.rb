@@ -219,43 +219,19 @@ module Houston
         return get_dm_for_username(name) if name.start_with?("@")
         return to_group_id(name) unless name.start_with?("#")
 
-        channel_id = channel_id_by_name[name]
-        unless channel_id
-          response = api("channels.list")
-          @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
-          @channel_id_by_name = Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
-          channel_id = channel_id_by_name[name]
-        end
-        raise ArgumentError, "Couldn't find a channel named #{name}" unless channel_id
-        channel_id
+        channel_id_by_name[name] || fetch_channels![name] || missing_channel!(name)
       end
 
       def to_group_id(name)
-        group_id = group_id_by_name[name]
-        unless group_id
-          response = api("groups.list")
-          @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
-          @group_id_by_name = Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
-          group_id = group_id_by_name[name]
-        end
-        raise ArgumentError, "Couldn't find a private group named #{name}" unless group_id
-        group_id
+        group_id_by_name[name] || fetch_groups![name] || missing_group!(name)
+      end
+
+      def to_user_id(name)
+        user_id_by_name[name] || fetch_users![name] || missing_user!(name)
       end
 
       def get_dm_for_username(name)
         get_dm_for_user_id to_user_id(name)
-      end
-
-      def to_user_id(name)
-        user_id = user_id_by_name[name]
-        unless user_id
-          response = api("users.list")
-          @users_by_id = response["members"].index_by { |attrs| attrs["id"] }
-          @user_id_by_name = Hash[response["members"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
-          user_id = user_id_by_name[name]
-        end
-        raise ArgumentError, "Couldn't find a user named #{name}" unless user_id
-        user_id
       end
 
       def get_dm_for_user_id(user_id)
@@ -266,6 +242,40 @@ module Houston
         end
         raise ArgumentError, "Unable to direct message the user #{user_id.inspect}" unless channel_id
         channel_id
+      end
+
+
+
+      def fetch_channels!
+        response = api("channels.list")
+        @channels_by_id = response["channels"].index_by { |attrs| attrs["id"] }
+        @channel_id_by_name = Hash[response["channels"].map { |attrs| ["##{attrs["name"]}", attrs["id"]] }]
+      end
+
+      def fetch_groups!
+        response = api("groups.list")
+        @groups_by_id = response["groups"].index_by { |attrs| attrs["id"] }
+        @group_id_by_name = Hash[response["groups"].map { |attrs| [attrs["name"], attrs["id"]] }]
+      end
+
+      def fetch_users!
+        response = api("users.list")
+        @users_by_id = response["members"].index_by { |attrs| attrs["id"] }
+        @user_id_by_name = Hash[response["members"].map { |attrs| ["@#{attrs["name"]}", attrs["id"]] }]
+      end
+
+
+
+      def missing_channel!(name)
+        raise ArgumentError, "Couldn't find a channel named #{name}"
+      end
+
+      def missing_group!(name)
+        raise ArgumentError, "Couldn't find a private group named #{name}"
+      end
+
+      def missing_user!(name)
+        raise ArgumentError, "Couldn't find a user named #{name}"
       end
 
 
