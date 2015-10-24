@@ -1,3 +1,5 @@
+require "houston/slack/railtie"
+
 module Houston
   module Slack
     class Engine < ::Rails::Engine

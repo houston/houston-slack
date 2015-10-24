@@ -80,6 +80,20 @@ module Houston
 
 
 
+      def user_exists?(username)
+        return false if username.nil?
+        to_user_id(username).present?
+      rescue ArgumentError
+        false
+      end
+
+      def users
+        fetch_users! if @users_by_id.empty?
+        @users_by_id.values
+      end
+
+
+
     private
       attr_reader :client,
                   :bot_id,
