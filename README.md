@@ -1,6 +1,6 @@
 # Houston::Slack
 
-This module allows Houston to listen to conversations on Slack and respond.
+This module allows Houston to post messages on Slack and to listen (and respond) to conversations via [Slack's Real Time Messaging API](https://api.slack.com/rtm)
 
 
 ## Installation
