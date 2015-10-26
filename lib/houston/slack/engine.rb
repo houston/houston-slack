@@ -5,13 +5,11 @@ module Houston
     class Engine < ::Rails::Engine
       isolate_namespace Houston::Slack
 
-      # Enabling assets precompiling under rails 3.1
-      if Rails.version >= '3.1'
-        initializer :assets do |config|
-          Rails.application.config.assets.precompile += %w(
-            houston/slack/application.js
-            houston/slack/application.css )
-        end
+      # Precompile this modules assets
+      initializer :assets do |config|
+        Rails.application.config.assets.precompile += %w(
+          houston/slack/application.js
+          houston/slack/application.css )
       end
 
       # Include the Engine's migrations with the Application
