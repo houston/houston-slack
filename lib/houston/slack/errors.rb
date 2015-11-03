@@ -12,5 +12,11 @@ module Houston
         additional_information[:response] = response
       end
     end
+
+    class AlreadyRespondedError < RuntimeError
+      def initialize(message=nil)
+        super message || "You have already replied to this Slash Command; you can only reply once"
+      end
+    end
   end
 end

@@ -3,11 +3,12 @@ require "thread_safe"
 
 module Houston::Slack
   class Configuration
-    attr_reader :listeners
+    attr_reader :listeners, :slash_commands
 
     def initialize
       @listeners = ThreadSafe::Array.new
       @typing_speed = 100.0
+      @slash_commands = {}
     end
 
     # Define configuration DSL here
@@ -32,6 +33,10 @@ module Houston::Slack
       Listener.new(matcher, false, block).tap do |listener|
         @listeners.push listener
       end
+    end
+
+    def slash(command_name, &block)
+      @slash_commands[command_name] = block
     end
 
   end
