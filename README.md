@@ -117,6 +117,26 @@ Houston::Slack.config do
 end
 ```
 
+### Slash Commands
+
+`Houston::Slack::Slash` can respond to [slash commands](https://api.slack.com/slash-commands) created for your team in Slack. A slash command sends Houston user inputed text and **must** receive a message in response. 
+
+When you create a slash command on Slack set the **URL** to `http://houstondomain.com/slack/command` and set the method to `POST`.
+
+###### Example
+
+This example responds to the slash command `/weather` where the user is expected to enter a zipcode.
+
+```ruby
+Houston::Slack.config do
+  slash("weather") do |e|
+    zipcode = e.text
+    weather = WeatherAPI.get_weather(zipcode)
+    message = "Today is #{weather.to_s}"
+    e.respond! message
+  end
+end
+```
 
 
 ## Contributing
