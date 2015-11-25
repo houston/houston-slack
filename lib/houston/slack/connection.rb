@@ -335,9 +335,8 @@ module Houston
 
 
       def api(command, options={})
-        response = Faraday.post(
-          "https://slack.com/api/#{command}",
-          options.merge(token: Houston::Slack.config.token))
+        response = http.post(command, options.merge(
+          token: Houston::Slack.config.token))
         MultiJson.load(response.body)
 
       rescue MultiJson::ParseError
@@ -352,6 +351,12 @@ module Houston
           (channel = find_channel($2)) ? "#{$1}#{channel["name"]}" : match }
         # !todo: strip punctuation, white space, etc
         message.strip
+      end
+
+      def http
+        @http ||= Faraday.new(url: "https://slack.com/api").tap do |connection|
+          connection.use Faraday::RaiseErrors
+        end
       end
 
     end
