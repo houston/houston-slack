@@ -163,53 +163,56 @@ module Houston
               @user_id_by_name[user["name"]] = user["id"]
 
             when EVENT_MESSAGE
+
+              # Don't respond to things that Houston said
+              next if data["user"] == bot_id
+
               message = data["text"]
+              next if message.blank?
 
-              if data["user"] != bot_id && !message.blank?
-                channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
-                sender = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
+              channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
+              sender = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
 
-                # Normalize mentions of Houston
-                message.gsub! match_me, ME
+              # Normalize mentions of Houston
+              message.gsub! match_me, ME
 
-                # Normalize other parts of the message
-                message = normalize_message(message)
+              # Normalize other parts of the message
+              message = normalize_message(message)
 
-                # Is someone talking directly to Houston?
-                direct_mention = channel.direct_message? || message[ME]
+              # Is someone talking directly to Houston?
+              direct_mention = channel.direct_message? || message[ME]
 
-                Houston::Slack.config.listeners.each do |listener|
-                  # Listeners come in two flavors: direct and indirect
-                  #
-                  # To trigger a direct listener, Houston must be directly
-                  # spoken to: as when the bot is mentioned or it is in
-                  # a conversation with someone.
-                  #
-                  # An indirect listener is triggered in any context
-                  # when it matches.
-                  #
-                  # We can ignore any listener that definitely doesn't
-                  # meet these criteria.
-                  next unless listener.indirect? or direct_mention or listener.conversation
+              Houston::Slack.config.listeners.each do |listener|
+                # Listeners come in two flavors: direct and indirect
+                #
+                # To trigger a direct listener, Houston must be directly
+                # spoken to: as when the bot is mentioned or it is in
+                # a conversation with someone.
+                #
+                # An indirect listener is triggered in any context
+                # when it matches.
+                #
+                # We can ignore any listener that definitely doesn't
+                # meet these criteria.
+                next unless listener.indirect? or direct_mention or listener.conversation
 
-                  # Does the message match one of Houston's known responses?
-                  match_data = listener.match message
-                  next unless match_data
+                # Does the message match one of Houston's known responses?
+                match_data = listener.match message
+                next unless match_data
 
-                  e = Houston::Slack::Event.new(
-                    message: message,
-                    match_data: match_data,
-                    channel: channel,
-                    sender: sender,
-                    listener: listener)
+                e = Houston::Slack::Event.new(
+                  message: message,
+                  match_data: match_data,
+                  channel: channel,
+                  sender: sender,
+                  listener: listener)
 
-                  # Skip listeners if they are not part of this conversation
-                  next unless listener.indirect? or direct_mention or listener.conversation.includes?(e)
+                # Skip listeners if they are not part of this conversation
+                next unless listener.indirect? or direct_mention or listener.conversation.includes?(e)
 
-                  Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{message}  (from: #{sender}, channel: #{channel})\e[0m"
+                Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{message}  (from: #{sender}, channel: #{channel})\e[0m"
 
-                  listener.call(e)
-                end
+                listener.call(e)
               end
             end
           rescue Exception
