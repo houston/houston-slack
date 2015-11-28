@@ -167,6 +167,9 @@ module Houston
               # Don't respond to things that Houston said
               next if data["user"] == bot_id
 
+              # ...or to things that another bot said
+              next if data.fetch("subtype", "message") == "bot_message"
+
               message = data["text"]
               next if message.blank?
 
