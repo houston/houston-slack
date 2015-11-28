@@ -48,7 +48,8 @@ module Houston
       alias :slack_channel :slack_username
 
       def set_slack_username!(username)
-        update_column :view_options, view_options.merge("slack_username" => username)
+        update_column :view_options, view_options.merge(
+          "slack_username" => username.gsub(/^@/, ""))
       end
 
     end
