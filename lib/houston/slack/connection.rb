@@ -311,7 +311,9 @@ module Houston
             "name" => user["real_name"],
             "user" => user }
         else
-          channels_by_id.fetch(id)
+          channels_by_id.fetch(id) do
+            raise ArgumentError, "Unable to find a channel with the ID #{id.inspect}"
+          end
         end
       end
 
