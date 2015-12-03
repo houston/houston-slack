@@ -355,8 +355,14 @@ module Houston
 
       def normalize_message(message)
         message = message.gsub(/<@U[^|]+\|([^>]*)>/, "@\\1")
-        message = message.gsub(/<([@#]?)([UC][^>]+)>/) { |match|
-          (channel = find_channel($2)) ? "#{$1}#{channel["name"]}" : match }
+        message = message.gsub(/<([@#]?)([UC][^>]+)>/) do |match|
+          begin
+            channel = find_channel($2)
+            "#{$1}#{channel["name"]}"
+          rescue ArgumentError
+            match
+          end
+        end
         message = message.gsub(/[“”]/, "\"")
         message = message.gsub(/[‘’]/, "'")
         # !todo: strip punctuation, white space, etc
