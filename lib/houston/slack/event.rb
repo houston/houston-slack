@@ -24,6 +24,10 @@ module Houston::Slack
       channel.reply(*args)
     end
 
+    def random_reply(*args)
+      channel.random_reply(*args)
+    end
+
     def matched?(key)
       match[key].present?
     end
