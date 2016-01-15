@@ -7,8 +7,12 @@ module Houston
         @id = attributes["id"]
         @name = attributes["name"]
         @type = :channel
-        @type = :direct_message if attributes["is_im"]
         @type = :group if attributes["is_group"]
+
+        if attributes["is_im"]
+          @type = :direct_message
+          @name = attributes["user"]["name"]
+        end
       end
 
       def reply(*messages)
@@ -66,6 +70,7 @@ module Houston
 
       def to_s
         return name if private?
+        return "@#{name}" if direct_message?
         "##{name}"
       end
 
