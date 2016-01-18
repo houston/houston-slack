@@ -1,7 +1,7 @@
 require "houston/slack/channel"
 require "houston/slack/conversation"
 require "houston/slack/driver"
-require "houston/slack/event"
+require "houston/slack/rtm_event"
 require "houston/slack/listener"
 require "houston/slack/user"
 require "houston/slack/errors"
@@ -203,7 +203,7 @@ module Houston
                 match_data = listener.match message
                 next unless match_data
 
-                e = Houston::Slack::Event.new(
+                e = Houston::Slack::RtmEvent.new(
                   message: message,
                   match_data: match_data,
                   channel: channel,
