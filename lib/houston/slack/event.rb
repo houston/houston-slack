@@ -12,7 +12,7 @@ module Houston::Slack
 
     def user
       return @user if defined?(@user)
-      @user = sender && ::User.find_by_email_address(sender.email)
+      @user = sender && ::User.find_by_slack_username(sender.username)
     end
 
     def reply(*args)
