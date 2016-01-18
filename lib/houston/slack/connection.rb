@@ -80,6 +80,31 @@ module Houston
 
 
 
+      def find_channel(id)
+        case id
+        when /^U/ then find_user(id)
+        when /^G/ then find_group(id)
+        when /^D/
+          user = find_user(get_user_id_for_dm(id))
+          { "id" => id,
+            "is_im" => true,
+            "name" => user["real_name"],
+            "user" => user }
+        else
+          channels_by_id.fetch(id) do
+            raise ArgumentError, "Unable to find a channel with the ID #{id.inspect}"
+          end
+        end
+      end
+
+      def find_user(id)
+        users_by_id.fetch(id) do
+          raise ArgumentError, "Unable to find a user with the ID #{id.inspect}"
+        end
+      end
+
+
+
       def user_exists?(username)
         return false if username.nil?
         to_user_id(username).present?
@@ -173,8 +198,8 @@ module Houston
               message = data["text"]
               next if message.blank?
 
-              channel = Houston::Slack::Channel.new(find_channel(data["channel"])) if data["channel"]
-              sender = Houston::Slack::User.new(find_user(data["user"])) if data["user"]
+              channel = Houston::Slack::Channel.find(data["channel"]) if data["channel"]
+              sender = Houston::Slack::User.find(data["user"]) if data["user"]
 
               # Normalize mentions of Houston
               message.gsub! match_me, ME
@@ -299,29 +324,6 @@ module Houston
       end
 
 
-
-      def find_channel(id)
-        case id
-        when /^U/ then find_user(id)
-        when /^G/ then find_group(id)
-        when /^D/
-          user = find_user(get_user_id_for_dm(id))
-          { "id" => id,
-            "is_im" => true,
-            "name" => user["real_name"],
-            "user" => user }
-        else
-          channels_by_id.fetch(id) do
-            raise ArgumentError, "Unable to find a channel with the ID #{id.inspect}"
-          end
-        end
-      end
-
-      def find_user(id)
-        users_by_id.fetch(id) do
-          raise ArgumentError, "Unable to find a user with the ID #{id.inspect}"
-        end
-      end
 
       def find_group(id)
         groups_by_id.fetch(id) do

@@ -12,6 +12,10 @@ module Houston
         @last_name = profile["last_name"]
       end
 
+      def self.find(id)
+        self.new Houston::Slack.connection.find_user(id)
+      end
+
       def name
         "#{first_name} #{last_name}"
       end

@@ -15,6 +15,10 @@ module Houston
         end
       end
 
+      def self.find(id)
+        self.new Houston::Slack.connection.find_channel(id)
+      end
+
       def reply(*messages)
         messages.flatten!
         return unless messages.any?
