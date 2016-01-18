@@ -18,6 +18,7 @@ group :test do
   gem "minitest"
   gem "capybara"
   gem "shoulda-context"
+  gem "rr"
 
   gem "minitest-reporters", require: false
   gem "minitest-reporters-turn_reporter", require: false

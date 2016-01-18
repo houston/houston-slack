@@ -41,3 +41,7 @@ class ActionDispatch::IntegrationTest
   self.fixture_path = File.expand_path("../fixtures", __FILE__)
 
 end
+
+class ActionController::TestCase
+  include Devise::TestHelpers
+end

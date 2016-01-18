@@ -263,6 +263,7 @@ GEM
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
+    rr (1.1.2)
     ruby-progressbar (1.7.5)
     rubyzip (1.1.7)
     rufus-scheduler (3.1.7)
@@ -331,6 +332,7 @@ DEPENDENCIES
   minitest-reporters-turn_reporter
   pry
   rake (~> 10.0)
+  rr
   shoulda-context
 
 BUNDLED WITH

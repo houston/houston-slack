@@ -1,15 +1,21 @@
-module Houston::Slack
-  class SlashCommand
-    attr_reader :text
+require "houston/slack/event"
 
-    def initialize(controller, params)
+module Houston::Slack
+  class SlashCommand < Event
+
+    def initialize(message: nil, channel: nil, sender: nil, controller: nil)
+      super(message: message, channel: channel, sender: sender)
       @controller = controller
-      @text = params.fetch :text
     end
 
     def respond!(message)
       raise Houston::Slack::AlreadyRespondedError if controller.performed?
       controller.render text: message
+    end
+
+    def text
+      puts "DEPRECATED: use `Houston::Slack::SlashCommand#message` instead of `text`"
+      message
     end
 
   private
