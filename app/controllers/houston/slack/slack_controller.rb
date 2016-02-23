@@ -32,7 +32,7 @@ module Houston::Slack
         controller: self)
 
       command.call e
-      head :no_content unless performed?
+      head :ok unless performed?
     end
 
   end
