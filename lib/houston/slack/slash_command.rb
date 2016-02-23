@@ -10,7 +10,8 @@ module Houston::Slack
 
     def respond!(message)
       raise Houston::Slack::AlreadyRespondedError if controller.performed?
-      controller.render text: message
+      message = {text: message} if message.is_a?(String)
+      controller.render json: message
     end
 
     def text
