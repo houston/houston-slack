@@ -30,6 +30,11 @@ module Houston::Slack
         return
       end
 
+      if Houston::Slack.connection.listening? && Houston::Slack.connection.team_id != params["team_id"]
+        render text: "Houston is connected to the team #{Houston::Slack.connection.team_domain}, but this slash command is registered to the team #{params["team_domain"]}. Houston can't answer it.", status: 200
+        return
+      end
+
       text = params.fetch :text
       channel = Houston::Slack::Channel.find(params.fetch(:channel_id))
       sender = Houston::Slack::User.find(params.fetch(:user_id))

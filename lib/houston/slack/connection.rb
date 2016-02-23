@@ -10,6 +10,8 @@ require "faraday"
 module Houston
   module Slack
     class Connection
+      attr_reader :team_id, :team_name, :team_domain
+
       EVENT_MESSAGE = "message".freeze
       EVENT_GROUP_JOINED = "group_joined".freeze
       EVENT_USER_JOINED = "team_join".freeze
@@ -147,6 +149,10 @@ module Houston
           @websocket_url = response.fetch("url")
           @bot_id = response.fetch("self").fetch("id")
           @bot_name = response.fetch("self").fetch("name")
+
+          @team_id = response.fetch("team").fetch("id")
+          @team_name = response.fetch("team").fetch("name")
+          @team_domain = response.fetch("team").fetch("domain")
 
           @channels_by_id = response.fetch("channels").index_by { |attrs| attrs.fetch("id") }
           @channel_id_by_name = Hash[response.fetch("channels").map { |attrs| ["##{attrs.fetch("name")}", attrs.fetch("id")] }]
