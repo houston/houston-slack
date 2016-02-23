@@ -37,12 +37,14 @@ module Houston::Slack
 
       text = params.fetch :text
       channel = Houston::Slack::Channel.find(params.fetch(:channel_id))
+      response_url = params.fetch :response_url
       sender = Houston::Slack::User.find(params.fetch(:user_id))
 
       e = Houston::Slack::SlashCommand.new(
         message: text,
         channel: channel,
         sender: sender,
+        response_url: response_url,
         controller: self)
 
       command.call e
