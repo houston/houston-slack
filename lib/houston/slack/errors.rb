@@ -18,5 +18,11 @@ module Houston
         super message || "You have already replied to this Slash Command; you can only reply once"
       end
     end
+
+    class NotInChannelError < RuntimeError
+      def initialize(channel)
+        super "Houston is not in the channel #{channel} and cannot reply"
+      end
+    end
   end
 end

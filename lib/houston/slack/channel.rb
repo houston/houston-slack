@@ -68,6 +68,10 @@ module Houston
       alias :group? :private_group?
       alias :private? :private_group?
 
+      def guest?
+        false
+      end
+
       def inspect
         "<Houston::Slack::Channel id=\"#{id}\" name=\"#{name}\">"
       end
