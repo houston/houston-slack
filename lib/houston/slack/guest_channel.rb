@@ -9,7 +9,7 @@ module Houston
   module Slack
     class GuestChannel < Channel
 
-      def initialize(params)
+      def initialize(attributes)
         @id = attributes["channel_id"]
         @name = attributes["channel_name"]
 
