@@ -1,4 +1,5 @@
 require "houston/slack/channel"
+require "houston/slack/guest_channel"
 require "houston/slack/conversation"
 require "houston/slack/driver"
 require "houston/slack/rtm_event"
