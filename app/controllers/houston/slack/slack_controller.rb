@@ -36,9 +36,17 @@ module Houston::Slack
       end
 
       text = params.fetch :text
-      channel = Houston::Slack::Channel.find(params.fetch(:channel_id))
       response_url = params.fetch :response_url
       sender = Houston::Slack::User.find(params.fetch(:user_id))
+
+      begin
+        channel = Houston::Slack::Channel.find(params.fetch(:channel_id))
+      rescue ArgumentError
+        # Happens when using a slash command in a DM or channel that Houston is
+        # not privy to. But as long as we're using only `respond!` or
+        # `delayed_respond!`, we don't really need the channel.
+        channel = Houston::Slack::GuestChannel.new(params)
+      end
 
       e = Houston::Slack::SlashCommand.new(
         message: text,

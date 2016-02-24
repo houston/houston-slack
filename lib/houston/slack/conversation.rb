@@ -4,6 +4,8 @@ module Houston::Slack
   class Conversation
 
     def initialize(channel, sender)
+      raise NotInChannelError, channel if channel.guest?
+
       @channel = channel
       @sender = sender
       @listeners = ThreadSafe::Array.new
