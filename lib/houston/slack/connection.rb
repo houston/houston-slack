@@ -45,6 +45,16 @@ module Houston
         api("chat.postMessage", params)
       end
 
+      def add_reaction(emojis, message)
+        Array(emojis).each do |emoji|
+          api("reactions.add", {
+            name: emoji,
+            channel: message.channel.id,
+            timestamp: message.timestamp})
+        end
+      end
+
+
 
       def listen!
         Houston.daemonize "slack" do

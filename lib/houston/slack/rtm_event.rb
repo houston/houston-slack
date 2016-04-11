@@ -19,6 +19,10 @@ module Houston::Slack
       listener.stop_listening!
     end
 
+    def react!(emoji)
+      Houston::Slack.connection.add_reaction(emoji, message_object)
+    end
+
   private
     attr_reader :listener, :message_object
 
