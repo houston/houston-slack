@@ -4,6 +4,7 @@ require "houston/slack/conversation"
 require "houston/slack/driver"
 require "houston/slack/rtm_event"
 require "houston/slack/listener"
+require "houston/slack/message"
 require "houston/slack/user"
 require "houston/slack/errors"
 require "faraday"
@@ -202,20 +203,27 @@ module Houston
               # ...or to things that another bot said
               next if data.fetch("subtype", "message") == "bot_message"
 
-              message = data["text"]
+              # Normalize mentions of Houston
+              data["text"].gsub! match_me, ME
+
+              # Normalize mentions of other users
+              data["text"].gsub!(/<@U[^|]+\|([^>]*)>/, "@\\1")
+
+              # Normalize mentions of channels
+              data["text"].gsub!(/<([@#]?)([UC][^>]+)>/) do |match|
+                begin
+                  channel = find_channel($2)
+                  "#{$1}#{channel["name"]}"
+                rescue ArgumentError
+                  match
+                end
+              end
+
+              message = Houston::Slack::Message.new(data)
               next if message.blank?
 
-              channel = Houston::Slack::Channel.find(data["channel"]) if data["channel"]
-              sender = Houston::Slack::User.find(data["user"]) if data["user"]
-
-              # Normalize mentions of Houston
-              message.gsub! match_me, ME
-
-              # Normalize other parts of the message
-              message = normalize_message(message)
-
               # Is someone talking directly to Houston?
-              direct_mention = channel.direct_message? || message[ME]
+              direct_mention = message.channel.direct_message? || message[ME]
 
               Houston::Slack.config.listeners.each do |listener|
                 # Listeners come in two flavors: direct and indirect
@@ -238,14 +246,12 @@ module Houston
                 e = Houston::Slack::RtmEvent.new(
                   message: message,
                   match_data: match_data,
-                  channel: channel,
-                  sender: sender,
                   listener: listener)
 
                 # Skip listeners if they are not part of this conversation
                 next unless listener.indirect? or direct_mention or listener.conversation.includes?(e)
 
-                Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{message}  (from: #{sender}, channel: #{channel})\e[0m"
+                Rails.logger.debug "\e[35m[slack:hear:#{data.fetch("subtype", "message")}] #{message.inspect}\e[0m"
 
                 listener.call(e)
               end
@@ -360,22 +366,6 @@ module Houston
         $!.additional_information[:response_body] = response.body
         $!.additional_information[:response_status] = response.status
         raise
-      end
-
-      def normalize_message(message)
-        message = message.gsub(/<@U[^|]+\|([^>]*)>/, "@\\1")
-        message = message.gsub(/<([@#]?)([UC][^>]+)>/) do |match|
-          begin
-            channel = find_channel($2)
-            "#{$1}#{channel["name"]}"
-          rescue ArgumentError
-            match
-          end
-        end
-        message = message.gsub(/[“”]/, "\"")
-        message = message.gsub(/[‘’]/, "'")
-        # !todo: strip punctuation, white space, etc
-        message.strip
       end
 
       def http

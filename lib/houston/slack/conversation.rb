@@ -11,8 +11,8 @@ module Houston::Slack
       @listeners = ThreadSafe::Array.new
     end
 
-    def listen_for(matcher, &block)
-      Houston::Slack.config.listen_for(matcher, &block).tap do |listener|
+    def listen_for(matcher, flags=[], &block)
+      Houston::Slack.config.listen_for(matcher, flags, &block).tap do |listener|
         listener.conversation = self
         listeners.push(listener)
       end

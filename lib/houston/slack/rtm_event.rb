@@ -4,8 +4,9 @@ module Houston::Slack
   class RtmEvent < Event
     attr_reader :match
 
-    def initialize(message: nil, channel: nil, sender: nil, match_data: nil, listener: nil)
-      super(message: message, channel: channel, sender: sender)
+    def initialize(message: nil, match_data: nil, listener: nil)
+      super(message: message.text, channel: message.channel, sender: message.sender)
+      @message_object = message
       @match = match_data
       @listener = listener
     end
@@ -19,7 +20,7 @@ module Houston::Slack
     end
 
   private
-    attr_reader :listener
+    attr_reader :listener, :message_object
 
   end
 end

@@ -13,6 +13,7 @@ module Houston
       end
 
       def self.find(id)
+        return nil unless id
         self.new Houston::Slack.connection.find_user(id)
       end
 

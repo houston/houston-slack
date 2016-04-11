@@ -23,14 +23,14 @@ module Houston::Slack
       @typing_speed
     end
 
-    def listen_for(matcher, &block)
-      Listener.new(matcher, true, block).tap do |listener|
+    def listen_for(matcher, flags=[], &block)
+      Listener.new(matcher, true, flags, block).tap do |listener|
         @listeners.push listener
       end
     end
 
-    def overhear(matcher, &block)
-      Listener.new(matcher, false, block).tap do |listener|
+    def overhear(matcher, flags=[], &block)
+      Listener.new(matcher, false, flags, block).tap do |listener|
         @listeners.push listener
       end
     end

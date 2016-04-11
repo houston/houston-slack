@@ -1,16 +1,23 @@
 module Houston::Slack
   class Listener
-    attr_reader :matcher
+    attr_reader :matcher, :flags
     attr_accessor :conversation
 
-    def initialize(matcher, direct, callback)
+    def initialize(matcher, direct, flags, callback)
+      flags.each do |flag|
+        unless Houston::Slack::Message.can_apply?(flag)
+          raise ArgumentError, "#{flag.inspect} is not a recognized flag"
+        end
+      end
+
       @matcher = matcher.freeze
+      @flags = flags.sort.freeze
       @direct = direct
       @callback = callback
     end
 
     def match(message)
-      matcher.match(message)
+      matcher.match message.to_s(flags)
     end
 
     def direct?
