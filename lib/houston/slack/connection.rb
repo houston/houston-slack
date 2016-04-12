@@ -213,6 +213,9 @@ module Houston
               # ...or to things that another bot said
               next if data.fetch("subtype", "message") == "bot_message"
 
+              # ...or to messages with no text
+              next if data["text"].blank?
+
               # Normalize mentions of Houston
               data["text"].gsub! match_me, ME
 
@@ -230,7 +233,6 @@ module Houston
               end
 
               message = Houston::Slack::Message.new(data)
-              next if message.blank?
 
               # Is someone talking directly to Houston?
               direct_mention = message.channel.direct_message? || message[ME]
