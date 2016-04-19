@@ -1,10 +1,10 @@
-require "houston/slack/event"
+require "slacks/event"
 
 module Houston::Slack
-  class SlashCommand < Event
+  class SlashCommand < Slacks::Event
 
     def initialize(message: nil, channel: nil, sender: nil, controller: nil, response_url: nil)
-      super(message: message, channel: channel, sender: sender)
+      super(session: Houston::Slack.connection.session, message: message, channel: channel, sender: sender)
       @controller = controller
       @response_url = response_url
     end

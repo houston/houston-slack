@@ -1,37 +1,34 @@
-require "houston/slack/listener"
-require "thread_safe"
+require "slacks"
 
 module Houston::Slack
   class Configuration
-    attr_reader :listeners, :slash_commands
+    attr_reader :slash_commands
 
     def initialize
-      @listeners = ThreadSafe::Array.new
-      @typing_speed = 100.0
       @slash_commands = {}
     end
 
     # Define configuration DSL here
 
     def token(*args)
-      @token = args.first if args.any?
-      @token
+      Houston::Slack.connection.token = args.first if args.any?
+      Houston::Slack.connection.token
     end
 
     def typing_speed(*args)
-      @typing_speed = args.first.to_f if args.any?
-      @typing_speed
+      Houston::Slack.connection.typing_speed = args.first.to_f if args.any?
+      Houston::Slack.connection.typing_speed
     end
 
     def listen_for(matcher, flags=[], &block)
-      Listener.new(matcher, true, flags, block).tap do |listener|
-        @listeners.push listener
+      Slacks::Listener.new(Houston::Slack.connection.session, matcher, true, flags, block).tap do |listener|
+        Houston::Slack.connection.session.listeners.instance_variable_get(:@listeners).push listener
       end
     end
 
     def overhear(matcher, flags=[], &block)
-      Listener.new(matcher, false, flags, block).tap do |listener|
-        @listeners.push listener
+      Slacks::Listener.new(Houston::Slack.connection.session, matcher, false, flags, block).tap do |listener|
+        Houston::Slack.connection.session.listeners.instance_variable_get(:@listeners).push listener
       end
     end
 

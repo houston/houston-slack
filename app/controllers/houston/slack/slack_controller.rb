@@ -30,17 +30,17 @@ module Houston::Slack
         return
       end
 
-      if Houston::Slack.connection.listening? && Houston::Slack.connection.team_id != params["team_id"]
-        render text: "Houston is connected to the team #{Houston::Slack.connection.team_domain}, but this slash command is registered to the team #{params["team_domain"]}. Houston can't answer it.", status: 200
+      if Houston::Slack.connection.listening? && Houston::Slack.connection.team.id != params["team_id"]
+        render text: "Houston is connected to the team #{Houston::Slack.connection.team.domain}, but this slash command is registered to the team #{params["team_domain"]}. Houston can't answer it.", status: 200
         return
       end
 
       text = params.fetch :text
       response_url = params.fetch :response_url
-      sender = Houston::Slack::User.find(params.fetch(:user_id))
+      sender = Houston::Slack.connection.find_user(params.fetch(:user_id))
 
       begin
-        channel = Houston::Slack::Channel.find(params.fetch(:channel_id))
+        channel = Houston::Slack.connection.find_channel(params.fetch(:channel_id))
       rescue ArgumentError
         # Happens when using a slash command in a DM or channel that Houston is
         # not privy to. But as long as we're using only `respond!` or
