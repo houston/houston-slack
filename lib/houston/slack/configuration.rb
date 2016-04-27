@@ -20,16 +20,12 @@ module Houston::Slack
       Houston::Slack.connection.typing_speed
     end
 
-    def listen_for(matcher, flags=[], &block)
-      Slacks::Listener.new(Houston::Slack.connection.session, matcher, true, flags, block).tap do |listener|
-        Houston::Slack.connection.session.listeners.instance_variable_get(:@listeners).push listener
-      end
+    def listen_for(*args, &block)
+      Houston::Slack.connection.session.listeners.listen_for(*args, &block)
     end
 
-    def overhear(matcher, flags=[], &block)
-      Slacks::Listener.new(Houston::Slack.connection.session, matcher, false, flags, block).tap do |listener|
-        Houston::Slack.connection.session.listeners.instance_variable_get(:@listeners).push listener
-      end
+    def overhear(*args, &block)
+      Houston::Slack.connection.session.listeners.overhear(*args, &block)
     end
 
     def slash(command_name, &block)

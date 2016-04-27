@@ -9,12 +9,6 @@ module Houston
         @session = Houston::Slack::Session.new
       end
 
-      delegate :token,
-               :token=,
-               :typing_speed,
-               :typing_speed=,
-               to: :session
-
       delegate :send_message,
                :add_reaction,
                :channels,
@@ -24,7 +18,14 @@ module Houston
                :users,
                :team,
                :bot,
+               :token,
+               :typing_speed,
+               :typing_speed=,
                to: "session.slack"
+
+      def token=(value)
+        session.slack.instance_variable_set :@token, value
+      end
 
 
 

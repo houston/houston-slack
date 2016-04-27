@@ -2,8 +2,7 @@ require "slacks"
 
 module Houston
   module Slack
-    class Session < Slacks::Session
-      attr_writer :typing_speed, :token
+    class Session < ::Slacks::Session
 
       def initialize
         super nil
@@ -13,17 +12,17 @@ module Houston
         Houston.observer.fire "slack:error", message
       end
 
-    protected
-
-      def process_message(data)
+      def message(data)
         super
       rescue Exception # rescues StandardError by default; but we want to rescue and report all errors
         Houston.report_exception $!
         Rails.logger.error "\e[31m[slack:exception] (#{$!.class}) #{$!.message}\n  #{$!.backtrace.join("\n  ")}\e[0m"
       end
 
+    protected
+
       def invoke!(listener, e)
-        Rails.logger.debug "\e[35m[slack:hear:#{e.message_object.type}] #{e.message_object.inspect}\e[0m"
+        Rails.logger.debug "\e[35m[slack:hear:#{e.message.type}] #{e.message.inspect}\e[0m"
 
         Thread.new do
           begin
