@@ -10,6 +10,7 @@ module Houston
       end
 
       delegate :send_message,
+               :update_message,
                :add_reaction,
                :channels,
                :find_channel,

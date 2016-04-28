@@ -49,7 +49,7 @@ GEM
     addressable (2.3.8)
     ansi (1.5.0)
     arel (6.0.3)
-    attentive (0.1.0)
+    attentive (0.1.1)
       thread_safe
     bcrypt (3.1.11)
     boblail-unfuddle (0.7.1)
@@ -309,7 +309,7 @@ GEM
       multi_json (~> 1.0)
       simplecov-html (~> 0.9.0)
     simplecov-html (0.9.0)
-    slacks (0.2.0)
+    slacks (0.2.1)
       attentive
       faraday
       faraday-raise-errors
