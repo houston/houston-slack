@@ -45,7 +45,7 @@ module Houston::Slack
         # Happens when using a slash command in a DM or channel that Houston is
         # not privy to. But as long as we're using only `respond!` or
         # `delayed_respond!`, we don't really need the channel.
-        channel = Houston::Slack::GuestChannel.new(params)
+        channel = Slacks::GuestChannel.new(params)
       end
 
       e = Houston::Slack::SlashCommand.new(
