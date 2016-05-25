@@ -37,7 +37,7 @@ module Houston
             @listening = true
             session.start!
 
-          rescue MigrationInProgress
+          rescue Slacks::MigrationInProgress
             # Slack is migrating our team to another server
             Rails.logger.warn "\e[33m[daemon:slack] migration in progress\e[0m"
             Houston.observer.fire "daemon:slack:reconnecting"
