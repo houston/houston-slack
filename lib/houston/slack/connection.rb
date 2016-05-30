@@ -10,11 +10,13 @@ module Houston
       end
 
       delegate :send_message,
+               :get_message,
                :update_message,
                :add_reaction,
                :channels,
                :find_channel,
                :find_user,
+               :find_user_by_nickname,
                :user_exists?,
                :users,
                :team,

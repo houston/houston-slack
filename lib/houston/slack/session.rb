@@ -19,6 +19,16 @@ module Houston
         Rails.logger.error "\e[31m[slack:exception] (#{$!.class}) #{$!.message}\n  #{$!.backtrace.join("\n  ")}\e[0m"
       end
 
+      def reaction_added(data)
+        message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
+        Houston.observer.fire "slack:reaction:added", data["reaction"], message["message"] if message["ok"]
+      end
+
+      def reaction_removed(data)
+        message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
+        Houston.observer.fire "slack:reaction:removed", data["reaction"], message["message"] if message["ok"]
+      end
+
     protected
 
       def invoke!(listener, e)
