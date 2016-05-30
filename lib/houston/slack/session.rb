@@ -22,7 +22,7 @@ module Houston
     protected
 
       def invoke!(listener, e)
-        Rails.logger.debug "\e[35m[slack:hear:#{e.message.type}] #{e.message.inspect}\e[0m"
+        Rails.logger.debug "\e[35m[slack:hear:#{e.message.type}] #{e.message}\e[0m"
 
         Thread.new do
           begin
