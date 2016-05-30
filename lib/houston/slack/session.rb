@@ -1,4 +1,5 @@
 require "slacks"
+require "houston/slack/entities"
 
 module Houston
   module Slack

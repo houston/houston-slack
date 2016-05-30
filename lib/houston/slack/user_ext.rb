@@ -7,6 +7,7 @@ module Houston
 
       module ClassMethods
         def find_by_slack_username(username)
+          username = username.username if username.is_a? Slacks::User
           username = username.gsub(/^@/, "")
 
           # If we can already identify the user who has the given username, return them
