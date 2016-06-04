@@ -1,4 +1,4 @@
-require "slacks/conversation"
+require "houston/slack/conversation"
 
 module Houston
   module Slack
