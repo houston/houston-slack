@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.test_files = Dir["test/**/*"]
 
   spec.add_dependency "attentive"
-  spec.add_dependency "concurrent"
+  spec.add_dependency "concurrent-ruby"
   spec.add_dependency "slacks"
 
   spec.add_development_dependency "bundler", "~> 1.10.6"
