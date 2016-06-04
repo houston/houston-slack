@@ -1,12 +1,33 @@
-require "slacks"
+require "attentive"
 require "houston/slack/entities"
+require "houston/slack/listener_collection"
+require "houston/slack/message"
+require "houston/slack/rtm_event"
 
 module Houston
   module Slack
-    class Session < ::Slacks::Session
+    class Session
+      include Attentive
 
-      def initialize
-        super nil
+      attr_reader :slack
+
+      def initialize(slack)
+        @slack = slack
+        bind :connected,
+             :error,
+             :message,
+             :reaction_added,
+             :reaction_removed
+      end
+
+      def listeners
+        @listeners ||= Houston::Slack::ListenerCollection.new
+      end
+
+    protected
+
+      def connected
+        Attentive.invocations = [slack.bot.name, slack.bot.to_s]
       end
 
       def error(message)
@@ -14,23 +35,54 @@ module Houston
       end
 
       def message(data)
-        super
+
+        # Don't respond to things that another bot said
+        return if data.fetch("subtype", "message") == "bot_message"
+
+        # Normalize mentions of users
+        data["text"].gsub!(/<@U[^|]+\|([^>]*)>/, %q{@\1})
+
+        # Normalize mentions of channels
+        data["text"].gsub!(/<[@#]?([UC][^>]+)>/) do |match|
+          begin
+            slack.find_channel($1)
+          rescue ArgumentError
+            match
+          end
+        end
+
+        message = Houston::Slack::Message.new(self, data)
+        hear(message).each do |match|
+
+          event = Houston::Slack::RtmEvent.new(self, match)
+          invoke! match.listener, event
+
+          # Invoke only one listener per message
+          return
+        end
+
       rescue Exception # rescues StandardError by default; but we want to rescue and report all errors
         Houston.report_exception $!
         Rails.logger.error "\e[31m[slack:exception] (#{$!.class}) #{$!.message}\n  #{$!.backtrace.join("\n  ")}\e[0m"
       end
 
       def reaction_added(data)
+        # Only care if someone reacted to something the bot said
+        return unless data["item_user"] == slack.bot.id && data["item"]["type"] == "message"
+
         message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
         Houston.observer.fire "slack:reaction:added", data["reaction"], message["message"] if message["ok"]
       end
 
       def reaction_removed(data)
+        # Only care if someone reacted to something the bot said
+        return unless data["item_user"] == slack.bot.id && data["item"]["type"] == "message"
+
         message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
         Houston.observer.fire "slack:reaction:removed", data["reaction"], message["message"] if message["ok"]
       end
 
-    protected
+    private
 
       def invoke!(listener, e)
         Rails.logger.debug "\e[35m[slack:hear:#{e.message.type}] #{e.message}\e[0m"
@@ -45,6 +97,12 @@ module Houston
           ensure
             ActiveRecord::Base.clear_active_connections!
           end
+        end
+      end
+
+      def bind(*events)
+        events.each do |event|
+          slack.on event, &method(event)
         end
       end
 

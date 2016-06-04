@@ -1,12 +1,14 @@
+require "slacks"
 require "houston/slack/session"
 
 module Houston
   module Slack
     class Connection
-      attr_reader :session
+      attr_reader :connection, :session, :connected_at
 
       def initialize
-        @session = Houston::Slack::Session.new
+        @connection = Slacks::Connection.new(nil)
+        @session = Houston::Slack::Session.new(connection)
       end
 
       delegate :send_message,
@@ -24,10 +26,10 @@ module Houston
                :token,
                :typing_speed,
                :typing_speed=,
-               to: "session.slack"
+               to: "connection"
 
       def token=(value)
-        session.slack.instance_variable_set :@token, value
+        connection.instance_variable_set :@token, value
       end
 
 
@@ -37,7 +39,7 @@ module Houston
           begin
             @connected_at = Time.now
             @listening = true
-            session.start!
+            connection.listen!
 
           rescue Slacks::MigrationInProgress
             # Slack is migrating our team to another server
@@ -57,8 +59,6 @@ module Houston
 
         @listening = false
       end
-
-      attr_reader :connected_at
 
       def listening?
         @listening
