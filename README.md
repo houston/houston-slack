@@ -1,6 +1,10 @@
 # Houston::Slack
 
-This module allows Houston to post messages on Slack and to listen (and respond) to conversations via [Slack's Real Time Messaging API](https://api.slack.com/rtm)
+This module allows Houston to post messages on Slack and to listen (and respond) to conversations via [Slack's Real Time Messaging API](https://api.slack.com/rtm).
+
+Communicating with Slack via its APIs is implemented by [slacks](https://github.com/houston/slacks).
+
+Matching listeners to incoming messages is implemented by [attentive](https://github.com/houston/attentive).
 
 
 ## Installation
@@ -78,8 +82,8 @@ This simple example listens for certain commands and then replies when Houston h
 
 ```ruby
 Houston::Slack.config do
-  listen_for(/hurry up/i) { |e| e.reply "I am not fast" }
-  listen_for(/fist bump/i) { |e| e.reply ":fist:", "ba da lata lata la" }
+  listen_for("hurry up") { |e| e.reply "I am not fast" }
+  listen_for("fist bump") { |e| e.reply ":fist:", "ba da lata lata la" }
 end
 ```
 
@@ -100,11 +104,11 @@ This example overhears a trigger word, "ouch!", and then enters a conversation w
 
 ```ruby
 Houston::Slack.config do
-  overhear(/\bouch\b/i) do |e|
+  overhear("ouch") do |e|
     conversation = e.start_conversation!
     conversation.ask(
         "On a scale of 1 to 10, how would you rate your pain?",
-        expect: /^(?<pain>[1-9]|10)$/) do |e|
+        expect: "{{pain:core.number.integer.positive}}" do |e|
 
       case e.match[:pain].to_i
       when 0..5; converation.say "I am sorry to hear that"
@@ -119,7 +123,7 @@ end
 
 ### Slash Commands
 
-`Houston::Slack::Slash` can respond to [slash commands](https://api.slack.com/slash-commands) created for your team in Slack. A slash command sends Houston user inputed text and **must** receive a message in response. 
+`Houston::Slack::Slash` can respond to [slash commands](https://api.slack.com/slash-commands) created for your team in Slack. A slash command sends Houston user inputed text and **must** receive a message in response.
 
 When you create a slash command on Slack set the **URL** to `http://houstondomain.com/slack/command` and set the method to `POST`.
 
