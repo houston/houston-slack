@@ -2,6 +2,7 @@ require "attentive"
 require "houston/slack/entities"
 require "houston/slack/listener_collection"
 require "houston/slack/message"
+require "houston/slack/reaction"
 require "houston/slack/rtm_event"
 
 module Houston
@@ -67,19 +68,17 @@ module Houston
       end
 
       def reaction_added(data)
-        # Only care if someone reacted to something the bot said
-        return unless data["item_user"] == slack.bot.id && data["item"]["type"] == "message"
-
-        message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
-        Houston.observer.fire "slack:reaction:added", data["reaction"], message["message"] if message["ok"]
+        # Only care about messages for now
+        return unless data["item"]["type"] == "message"
+        e = Houston::Slack::Reaction.new(self, data)
+        Houston.observer.fire "slack:reaction:added", e
       end
 
       def reaction_removed(data)
-        # Only care if someone reacted to something the bot said
-        return unless data["item_user"] == slack.bot.id && data["item"]["type"] == "message"
-
-        message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
-        Houston.observer.fire "slack:reaction:removed", data["reaction"], message["message"] if message["ok"]
+        # Only care about messages for now
+        return unless data["item"]["type"] == "message"
+        e = Houston::Slack::Reaction.new(self, data)
+        Houston.observer.fire "slack:reaction:removed", e
       end
 
     private
