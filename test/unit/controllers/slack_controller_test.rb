@@ -8,8 +8,8 @@ class Houston::Slack::SlackControllerTest < ActionController::TestCase
     setup do
       @calls = 0
       Houston::Slack.config.slash("test") { @calls += 1 }
-      stub(Houston::Slack::Channel).find("C0D1UMW7Q").returns({})
-      stub(Houston::Slack::User).find("U0D1QH53N").returns({})
+      stub(Houston::Slack.connection).find_channel("C0D1UMW7Q").returns({})
+      stub(Houston::Slack.connection).find_user("U0D1QH53N").returns({})
     end
 
     teardown do
@@ -27,12 +27,12 @@ class Houston::Slack::SlackControllerTest < ActionController::TestCase
     end
 
     should "look up the channel where the command was triggered" do
-      mock(Houston::Slack::Channel).find("C0D1UMW7Q")
+      mock(Houston::Slack.connection).find_channel("C0D1UMW7Q")
       post :command, {use_route: :slack}.merge(slash_command_payload)
     end
 
     should "look up the user that issued the command" do
-      mock(Houston::Slack::User).find("U0D1QH53N")
+      mock(Houston::Slack.connection).find_user("U0D1QH53N")
       post :command, {use_route: :slack}.merge(slash_command_payload)
     end
   end
