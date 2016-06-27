@@ -29,7 +29,7 @@ module Houston
           user && user["name"]
 
         end
-        "@" + username
+        "@" + username if username
       end
       alias :slack_channel :slack_username
 
