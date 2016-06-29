@@ -7,7 +7,7 @@ module Houston
       def initialize(session, data, params={})
         @session = session
         @data = data
-        super data["text"], params
+        super data.fetch("text", ""), params
         contexts << :conversation if channel.direct_message?
       end
 
