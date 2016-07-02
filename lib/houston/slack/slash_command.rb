@@ -1,14 +1,23 @@
-require "houston/slack/event"
-
 module Houston
   module Slack
-    class SlashCommand < Houston::Slack::Event
+    class SlashCommand
+      attr_reader :message, :channel, :sender, :controller, :response_url
 
       def initialize(message: nil, channel: nil, sender: nil, controller: nil, response_url: nil)
-        super(session: Houston::Slack.connection.session, message: message, channel: channel, sender: sender)
+        @message = message
+        @channel = channel
+        @sender = sender
         @controller = controller
         @response_url = response_url
       end
+
+
+
+      def user
+        sender.user
+      end
+
+
 
       def respond!(message)
         raise Houston::Slack::AlreadyRespondedError if controller.performed?
@@ -21,10 +30,25 @@ module Houston
         Faraday.post response_url, message, { "Content-Type" => "application/json" }
       end
 
-      def text
-        puts "DEPRECATED: use `Houston::Slack::SlashCommand#message` instead of `text`"
-        message
+      def reply(*args)
+        channel.reply(*args)
       end
+
+      def random_reply(*args)
+        channel.random_reply(*args)
+      end
+
+      def start_conversation!
+        Conversation.new(channel, sender)
+      end
+
+
+
+      def to_h
+        { channel: channel, message: message, sender: sender }
+      end
+
+
 
     private
       attr_reader :controller, :response_url

@@ -1,14 +1,15 @@
-require "attentive/message"
+require "houston/conversations/message"
 
 module Houston
   module Slack
-    class Message < ::Attentive::Message
+    class Message < ::Houston::Conversations::Message
 
       def initialize(session, data, params={})
         @session = session
         @data = data
         super data.fetch("text", ""), params
         contexts << :conversation if channel.direct_message?
+        contexts << :slack
       end
 
 

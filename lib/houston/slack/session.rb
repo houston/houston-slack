@@ -1,14 +1,12 @@
-require "attentive"
 require "houston/slack/entities"
-require "houston/slack/listener_collection"
 require "houston/slack/message"
 require "houston/slack/reaction"
 require "houston/slack/rtm_event"
+require "houston/slack/sender_ext"
 
 module Houston
   module Slack
     class Session
-      include Attentive
 
       attr_reader :slack
 
@@ -19,10 +17,6 @@ module Houston
              :message,
              :reaction_added,
              :reaction_removed
-      end
-
-      def listeners
-        @listeners ||= Houston::Slack::ListenerCollection.new
       end
 
     protected
@@ -53,13 +47,8 @@ module Houston
         end
 
         message = Houston::Slack::Message.new(self, data)
-        hear(message).each do |match|
-
-          event = Houston::Slack::RtmEvent.new(self, match)
-          invoke! match.listener, event
-
-          # Invoke only one listener per message
-          return
+        Houston::Conversations.hear(message) do |event|
+          event.extend Houston::Slack::RtmEvent
         end
 
       rescue Exception # rescues StandardError by default; but we want to rescue and report all errors
@@ -82,20 +71,6 @@ module Houston
       end
 
     private
-
-      def invoke!(listener, e)
-        Rails.logger.debug "\e[35m[slack:hear:#{e.message.type}] #{e.message}\e[0m"
-
-        Houston.async do
-          begin
-            listener.call(e)
-          rescue Exception # rescues StandardError by default; but we want to rescue and report all errors
-            Houston.report_exception $!, parameters: {channel: e.channel, message: e.message, sender: e.sender}
-            Rails.logger.error "\e[31m[slack:exception] (#{$!.class}) #{$!.message}\n  #{$!.backtrace.join("\n  ")}\e[0m"
-            e.reply "An error occurred when I was trying to answer you"
-          end
-        end
-      end
 
       def bind(*events)
         events.each do |event|

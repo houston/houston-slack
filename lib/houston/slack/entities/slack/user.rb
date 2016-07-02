@@ -1,5 +1,3 @@
-require "attentive/entity"
-
 # https://get.slack.help/hc/en-us/articles/216360827-Changing-your-username
 
 # Usernames can be up to 21 characters long. They can contain lowercase letters

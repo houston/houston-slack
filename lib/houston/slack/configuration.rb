@@ -20,14 +20,6 @@ module Houston::Slack
       Houston::Slack.connection.typing_speed
     end
 
-    def listen_for(*args, &block)
-      Houston::Slack.connection.session.listeners.listen_for(*args, &block)
-    end
-
-    def overhear(*args, &block)
-      Houston::Slack.connection.session.listeners.overhear(*args, &block)
-    end
-
     def slash(command_name, &block)
       @slash_commands[command_name] = block
     end

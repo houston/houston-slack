@@ -23,3 +23,15 @@ group :test do
   gem "minitest-reporters", require: false
   gem "minitest-reporters-turn_reporter", require: false
 end
+
+# Use the development version of houston-core
+# gem "houston-core", github: "houston/houston-core", branch: "master"
+
+# Use the development version of houston-conversations
+gem "houston-conversations", github: "houston/houston-conversations", branch: "master"
+
+# Use the development version of slacks
+gem "slacks", github: "houston/slacks", branch: "master"
+
+# Use the development version of attentive
+# gem "attentive", github: "houston/attentive", branch: "master"
