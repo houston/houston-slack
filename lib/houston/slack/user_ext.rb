@@ -14,8 +14,8 @@ module Houston
 
             # Look up the email address of the Slack user and see if we can
             # identify the Houston user by the Slack user's email address.
-            user = Houston::Slack.connection.users.detect { |user| user["name"] == username }
-            user = find_by_email_address user["profile"]["email"] if user
+            slack_user = Houston::Slack.connection.users.detect { |user| user["name"] == username }
+            find_by_email_address slack_user["profile"]["email"] if slack_user
 
           end
         end
