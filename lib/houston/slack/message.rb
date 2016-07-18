@@ -3,6 +3,7 @@ require "houston/conversations/message"
 module Houston
   module Slack
     class Message < ::Houston::Conversations::Message
+      attr_reader :session, :data
 
       def initialize(session, data, params={})
         @session = session
@@ -47,8 +48,6 @@ module Houston
         super
       end
 
-    private
-      attr_reader :session, :data
     end
   end
 end

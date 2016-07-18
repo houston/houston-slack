@@ -46,7 +46,7 @@ module Houston
 
 
       def to_h
-        { channel: channel, message: message, sender: sender }
+        { emoji: emoji, channel: channel, message: message, sender: sender, user: user }
       end
 
     end

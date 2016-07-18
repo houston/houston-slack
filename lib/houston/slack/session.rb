@@ -26,7 +26,7 @@ module Houston
       end
 
       def error(message)
-        Houston.observer.fire "slack:error", message
+        Houston.observer.fire "slack:error", message: message
       end
 
       def message(data)
