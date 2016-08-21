@@ -4,12 +4,8 @@ require "houston/slack/session"
 module Houston
   module Slack
     class Connection
-      attr_reader :connection, :session, :connected_at
-
-      def initialize
-        @connection = Slacks::Connection.new(nil)
-        @session = Houston::Slack::Session.new(connection)
-      end
+      attr_reader :connected_at
+      attr_accessor :token
 
       delegate :send_message,
                :get_message,
@@ -23,13 +19,12 @@ module Houston
                :users,
                :team,
                :bot,
-               :token,
                :typing_speed,
                :typing_speed=,
                to: "connection"
 
-      def token=(value)
-        connection.instance_variable_set :@token, value
+      def connection
+        @connection ||= Slacks::Connection.new(token)
       end
 
 

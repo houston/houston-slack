@@ -10,10 +10,10 @@ GIT
 
 GIT
   remote: git://github.com/houston/slacks.git
-  revision: a5d409dbf245a89b07896226e254771a5b33cc08
+  revision: a7af1290de30f781af33582fabdc8403316d6df1
   branch: master
   specs:
-    slacks (0.4.0)
+    slacks (0.4.1)
       concurrent-ruby
       faraday
       faraday-raise-errors

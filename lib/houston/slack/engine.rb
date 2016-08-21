@@ -22,6 +22,10 @@ module Houston
         end
       end
 
+      initializer "houston.slack.start-listening" do
+        Houston::Slack::Session.new(Houston::Slack.connection)
+      end
+
     end
   end
 end

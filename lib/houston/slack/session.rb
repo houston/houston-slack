@@ -10,8 +10,8 @@ module Houston
 
       attr_reader :slack
 
-      def initialize(slack)
-        @slack = slack
+      def initialize(connection)
+        @slack = connection.connection
         bind :connected,
              :error,
              :message,
