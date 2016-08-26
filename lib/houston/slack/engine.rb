@@ -23,7 +23,8 @@ module Houston
       end
 
       initializer "houston.slack.start-listening" do
-        Houston::Slack::Session.new(Houston::Slack.connection)
+        Houston::Slack.instance_variable_set :@session,
+          Houston::Slack::Session.new(Houston::Slack.connection)
       end
 
     end

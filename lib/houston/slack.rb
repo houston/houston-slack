@@ -7,7 +7,7 @@ module Houston
   module Slack
     extend self
 
-    attr_reader :connection
+    attr_reader :connection, :session
 
     def send(message, options)
       connection.send_message(message, options)

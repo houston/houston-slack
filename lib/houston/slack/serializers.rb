@@ -25,7 +25,7 @@ module Houston
 
       def unpack(object)
         message_data = object.fetch("data")
-        Houston::Slack::Message.new(Houston::Slack.connection.session, message_data)
+        Houston::Slack::Message.new(Houston::Slack.session, message_data)
       end
     end
 
