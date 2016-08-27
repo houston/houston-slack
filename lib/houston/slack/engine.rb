@@ -23,6 +23,7 @@ module Houston
       end
 
       initializer "houston.slack.start-listening" do
+        Rails.logger.info "\e[94mhouston.slack.start-listening\e[0m"
         Houston::Slack.instance_variable_set :@session,
           Houston::Slack::Session.new(Houston::Slack.connection)
       end
