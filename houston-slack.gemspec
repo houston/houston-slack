@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.test_files = Dir["test/**/*"]
 
-  spec.add_dependency "houston-core", ">= 0.7.0.beta4"
+  spec.add_dependency "houston-core", ">= 0.8.0.pre"
   spec.add_dependency "houston-conversations", ">= 0.1.0"
   spec.add_dependency "attentive"
   spec.add_dependency "slacks", ">= 0.4.0"
