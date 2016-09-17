@@ -22,7 +22,7 @@ module Houston
     protected
 
       def connected
-        Attentive.invocations = [slack.bot.name, slack.bot.to_s]
+        Houston::Conversations.wake_words = [slack.bot.name, slack.bot.to_s]
       end
 
       def error(message)
