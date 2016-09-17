@@ -1,18 +1,17 @@
-require "houston/conversations/message"
-
 module Houston
   module Slack
-    class Message < ::Houston::Conversations::Message
-      attr_reader :session, :data
+    class Message
+      attr_reader :session, :data, :text, :contexts
 
-      def initialize(session, data, params={})
+      def initialize(session, data)
         @session = session
         @data = data
-        super (data["text"] || ""), params
-        contexts << :conversation if channel.direct_message?
-        contexts << :slack
+        @text = data["text"] || ""
+        @contexts = [:slack]
+        @contexts << :conversation if channel.direct_message?
       end
 
+      alias :to_s :text
 
       def channel
         return @channel if defined?(@channel)
