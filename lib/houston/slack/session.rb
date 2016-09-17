@@ -47,8 +47,9 @@ module Houston
         end
 
         message = Houston::Slack::Message.new(self, data)
-        Houston::Conversations.hear(message) do |event|
+        Houston::Conversations.hear(message) do |event, listener|
           event.extend Houston::Slack::RtmEvent
+          listener.call_async event
         end
 
       rescue Exception # rescues StandardError by default; but we want to rescue and report all errors
