@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/houston/houston-conversations.git
-  revision: 0c63d1098d8950d47949bd010be70e88085e5830
+  revision: 4650335a147285ec0bfd1e720484c118e26b2258
   branch: master
   specs:
     houston-conversations (0.1.0)
@@ -10,10 +10,10 @@ GIT
 
 GIT
   remote: git://github.com/houston/slacks.git
-  revision: c0193194be9ed1836bb87f90fabfcc197c0c0f5b
+  revision: 7e89ce3a0b46ed21509d827e987796aaf5ea1cb0
   branch: master
   specs:
-    slacks (0.4.2)
+    slacks (0.4.3)
       concurrent-ruby
       faraday
       faraday-raise-errors
@@ -26,8 +26,8 @@ PATH
     houston-slack (0.0.1)
       attentive
       houston-conversations (>= 0.1.0)
-      houston-core (>= 0.7.0.beta4)
-      slacks (>= 0.4.0)
+      houston-core (>= 0.8.0.pre)
+      slacks (>= 0.4.3)
 
 GEM
   remote: https://rubygems.org/

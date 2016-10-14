@@ -12,6 +12,7 @@ module Houston
                :update_message,
                :add_reaction,
                :channels,
+               :can_see?,
                :find_channel,
                :find_user,
                :find_user_by_nickname,

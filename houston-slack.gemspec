@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "houston-core", ">= 0.8.0.pre"
   spec.add_dependency "houston-conversations", ">= 0.1.0"
   spec.add_dependency "attentive"
-  spec.add_dependency "slacks", ">= 0.4.0"
+  spec.add_dependency "slacks", ">= 0.4.3"
 
   spec.add_development_dependency "bundler", "~> 1.11.2"
   spec.add_development_dependency "rake", "~> 11.2"
