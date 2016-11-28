@@ -25,7 +25,8 @@ module Houston
         username = get_prop "slack.username" do
 
           # Look for a Slack user that has one of this Houston user's email addresses.
-          user = Houston::Slack.connection.users.detect { |user| email_addresses.member?(user["profile"]["email"]) }
+          user = Houston::Slack.connection.users.detect { |user|
+            user["profile"]["email"] && email_addresses.member?(user["profile"]["email"].downcase) }
           user && user["name"]
 
         end
