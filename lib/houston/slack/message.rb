@@ -17,14 +17,12 @@ module Houston
 
       def channel
         return @channel if defined?(@channel)
-        @channel = Houston::Slack::Channel.new(
-          session.slack.find_channel(data["channel"]),
-          data["thread_ts"])
+        @channel = session.connection.find_channel(data["channel"], data["thread_ts"])
       end
 
       def sender
         return @sender if defined?(@sender)
-        @sender = session.slack.find_user data["user"]
+        @sender = session.connection.find_user data["user"]
       end
 
       def timestamp
@@ -37,7 +35,7 @@ module Houston
 
 
       def add_reaction(emoji)
-        session.slack.add_reaction(emoji, self)
+        session.connection.add_reaction(emoji, self)
       end
 
 

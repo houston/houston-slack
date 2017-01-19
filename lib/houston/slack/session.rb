@@ -7,10 +7,10 @@ require "houston/slack/sender_ext"
 module Houston
   module Slack
     class Session
-
-      attr_reader :slack
+      attr_reader :connection
 
       def initialize(connection)
+        @connection = connection
         @slack = connection.connection
         bind :connected,
              :error,
@@ -20,6 +20,7 @@ module Houston
       end
 
     protected
+      attr_reader :slack
 
       def connected
         Houston::Conversations.wake_words = [slack.bot.name, slack.bot.to_s]

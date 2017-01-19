@@ -13,7 +13,6 @@ module Houston
                :add_reaction,
                :channels,
                :can_see?,
-               :find_channel,
                :find_user,
                :find_user_by_nickname,
                :user_exists?,
@@ -26,6 +25,12 @@ module Houston
 
       def connection
         @connection ||= Slacks::Connection.new(token)
+      end
+
+
+
+      def find_channel(id, thread_ts=nil)
+        Houston::Slack::Channel.new(connection.find_channel(id), thread_ts)
       end
 
 

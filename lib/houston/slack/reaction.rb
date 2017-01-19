@@ -5,7 +5,7 @@ module Houston
 
       def initialize(session, data)
         @emoji = data["reaction"]
-        @sender = session.slack.find_user data["user"]
+        @sender = session.connection.find_user data["user"]
 
         message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
         raise Slacks::ResponseError.new(message, message["error"]) unless message["ok"]

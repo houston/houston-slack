@@ -2,15 +2,15 @@ module Houston
   module Slack
     class ChannelSerializer
       def applies_to?(object)
-        object.is_a? Slacks::Channel
+        object.is_a?(Houston::Slack::Channel)
       end
 
       def pack(channel)
-        { "id" => channel.id }
+        { "id" => channel.id, "thread_ts" => channel.thread_ts }
       end
 
       def unpack(object)
-        Houston::Slack.connection.find_channel object.fetch("id")
+        Houston::Slack.connection.find_channel(object.fetch("id"), object["thread_ts"])
       end
     end
 
