@@ -1,3 +1,5 @@
+require "houston/slack/channel"
+
 module Houston
   module Slack
     class Message
@@ -15,7 +17,9 @@ module Houston
 
       def channel
         return @channel if defined?(@channel)
-        @channel = session.slack.find_channel data["channel"]
+        @channel = Houston::Slack::Channel.new(
+          session.slack.find_channel(data["channel"]),
+          data["thread_ts"])
       end
 
       def sender
