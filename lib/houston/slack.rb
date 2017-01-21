@@ -28,6 +28,7 @@ module Houston
   register_events {{
     "daemon:slack:reconnecting" => desc("The connection to Slack was lost; Houston will try to reconnect in a few seconds"),
     "slack:error" => params("message").desc("An error message was received from Slack"),
+
     "slack:reaction:added" => params("emoji", "channel", "message", "sender").desc("A reaction was added to a message on Slack"),
     "slack:reaction:removed" => params("emoji", "channel", "message", "sender").desc("A reaction was added to a message on Slack")
   }}

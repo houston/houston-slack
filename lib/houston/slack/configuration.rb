@@ -2,10 +2,11 @@ require "slacks"
 
 module Houston::Slack
   class Configuration
-    attr_reader :slash_commands
+    attr_reader :slash_commands, :actions
 
     def initialize
       @slash_commands = {}
+      @actions = {}
     end
 
     # Define configuration DSL here
@@ -22,6 +23,10 @@ module Houston::Slack
 
     def slash(command_name, &block)
       @slash_commands[command_name] = block
+    end
+
+    def action(action_name, &block)
+      @actions[action_name] = block
     end
 
   end

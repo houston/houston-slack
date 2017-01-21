@@ -5,6 +5,7 @@ Houston::Slack::Engine.routes.draw do
     post "/connect", to: "slack#connect"
     get "/command", to: "slack#ssl_verify"
     post "/command", to: "slack#command"
+    post "/messages", to: "slack#message"
   end
 
 end
