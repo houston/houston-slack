@@ -21,23 +21,23 @@ class Houston::Slack::SlackControllerTest < ActionController::TestCase
     end
 
     should "respond with success" do
-      post :command, slash_command_payload
+      post :command, params: slash_command_payload
       assert_response :success
     end
 
     should "invoke the registered Slash command" do
-      post :command, slash_command_payload
+      post :command, params: slash_command_payload
       assert_equal 1, @calls
     end
 
     should "look up the channel where the command was triggered" do
       mock(Houston::Slack.connection).find_channel("C0D1UMW7Q")
-      post :command, slash_command_payload
+      post :command, params: slash_command_payload
     end
 
     should "look up the user that issued the command" do
       mock(Houston::Slack.connection).find_user("U0D1QH53N")
-      post :command, slash_command_payload
+      post :command, params: slash_command_payload
     end
   end
 

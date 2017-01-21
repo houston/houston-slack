@@ -25,7 +25,7 @@ group :test do
 end
 
 # Use the development version of houston-core
-# gem "houston-core", github: "houston/houston-core", branch: "master"
+gem "houston-core", github: "houston/houston-core", branch: "master"
 
 # Use the development version of houston-conversations
 gem "houston-conversations", github: "houston/houston-conversations", branch: "master"

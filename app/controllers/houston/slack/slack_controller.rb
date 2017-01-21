@@ -26,12 +26,12 @@ module Houston::Slack
       command_name = params.fetch(:command).gsub(/^\//, "")
       command = Houston::Slack.config.slash_commands[command_name]
       unless command
-        render text: "A slash command named '#{command_name}' is not defined", status: 404
+        render plain: "A slash command named '#{command_name}' is not defined", status: 404
         return
       end
 
       if Houston::Slack.connection.listening? && Houston::Slack.connection.team.id != params["team_id"]
-        render text: "Houston is connected to the team #{Houston::Slack.connection.team.domain}, but this slash command is registered to the team #{params["team_domain"]}. Houston can't answer it.", status: 200
+        render plain: "Houston is connected to the team #{Houston::Slack.connection.team.domain}, but this slash command is registered to the team #{params["team_domain"]}. Houston can't answer it.", status: 200
         return
       end
 
