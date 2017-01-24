@@ -37,28 +37,36 @@ module Houston
 
       def listen!
         Houston.daemonize "slack" do
-          begin
-            @connected_at = Time.now
-            @listening = true
-            connection.listen!
+          Houston.try(16) do # 2s, 4s, 8s, 16s, 32s, 64s, 2m, 4m, 8m, 17m, 34m, 68m, 2h, 4h, 9h, 18h
+            begin
+              @connected_at = Time.now
+              @listening = true
+              connection.listen!
 
-          rescue Slacks::MigrationInProgress
-            # Slack is migrating our team to another server
-            Rails.logger.warn "\e[33m[daemon:slack] migration in progress\e[0m"
-            Houston.observer.fire "daemon:slack:reconnecting"
-            sleep 5
-            retry
+            rescue Slacks::MigrationInProgress
+              @listening = false
+              # Slack is migrating our team to another server
+              Rails.logger.warn "\e[33m[daemon:slack] migration in progress\e[0m"
+              Houston.observer.fire "daemon:slack:reconnecting"
+              sleep 5
+              retry
 
-          rescue Errno::EPIPE
-            # We got disconnected. Retry
-            Rails.logger.warn "\e[31m[daemon:slack] Disconnected from Slack; retrying\e[0m"
-            Houston.observer.fire "daemon:slack:reconnecting"
-            sleep 5
-            retry
+            rescue Errno::EPIPE
+              @listening = false
+              # We got disconnected. Retry
+              Rails.logger.warn "\e[31m[daemon:slack] Disconnected from Slack; retrying\e[0m"
+              Houston.observer.fire "daemon:slack:reconnecting"
+              sleep 5
+              retry
+
+            rescue
+              @listening = false
+              Houston.report_exception $!
+              Houston.observer.fire "daemon:slack:reconnecting"
+              raise
+            end
           end
         end
-
-        @listening = false
       end
 
       def listening?
