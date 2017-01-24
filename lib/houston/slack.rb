@@ -1,3 +1,4 @@
+require "houston/conversations"
 require "houston/slack/engine"
 require "houston/slack/configuration"
 require "houston/slack/connection"
@@ -8,6 +9,10 @@ module Houston
     extend self
 
     attr_reader :connection, :session
+
+    def dependencies
+      [ :conversations ]
+    end
 
     def send(message, options)
       connection.send_message(message, options)
