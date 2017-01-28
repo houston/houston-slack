@@ -43,7 +43,7 @@ module Houston
               @listening = true
               connection.listen!
 
-            rescue Slacks::MigrationInProgress
+            rescue Slacks::Response::MigrationInProgress
               @listening = false
               # Slack is migrating our team to another server
               Rails.logger.warn "\e[33m[daemon:slack] migration in progress\e[0m"

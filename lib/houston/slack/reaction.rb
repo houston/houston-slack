@@ -8,7 +8,6 @@ module Houston
         @sender = session.connection.find_user data["user"]
 
         message = Houston::Slack.connection.get_message data["item"]["channel"], data["item"]["ts"]
-        raise Slacks::ResponseError.new(message, message["error"]) unless message["ok"]
         message_data = message.slice("type", "channel").merge(
           message["message"].slice("user", "text", "ts", "attachments", "reactions"))
         @message = Houston::Slack::Message.new(session, message_data)

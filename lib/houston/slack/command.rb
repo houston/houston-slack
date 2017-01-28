@@ -1,3 +1,5 @@
+require "houston/slack/errors"
+
 module Houston
   module Slack
     class Command
