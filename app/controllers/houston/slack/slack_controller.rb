@@ -3,7 +3,7 @@ require "houston/slack/action"
 
 module Houston::Slack
   class SlackController < ApplicationController
-    skip_before_filter :verify_authenticity_token, only: [:command, :message]
+    skip_before_action :verify_authenticity_token, only: [:command, :message]
 
     def show
       @connection = Houston::Slack.connection
