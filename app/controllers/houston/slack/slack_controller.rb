@@ -81,7 +81,7 @@ module Houston::Slack
       end
 
       if Houston::Slack.connection.listening? && Houston::Slack.connection.team.id != payload.fetch("team")["id"]
-        render plain: "Houston is connected to the team #{Houston::Slack.connection.team.domain}, but this slash command is registered to the team #{params["team"]["domain"]}. Houston can't answer it.", status: 200
+        render plain: "Houston is connected to the team #{Houston::Slack.connection.team.domain}, but this slash command is registered to the team #{payload.fetch("team")["domain"]}. Houston can't answer it.", status: 200
         return
       end
 
