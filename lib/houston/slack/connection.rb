@@ -51,7 +51,7 @@ module Houston
               sleep 5
               retry
 
-            rescue Errno::EPIPE
+            rescue Errno::EPIPE, Errno::ECONNRESET
               @listening = false
               # We got disconnected. Retry
               Rails.logger.warn "\e[31m[daemon:slack] Disconnected from Slack; retrying\e[0m"
