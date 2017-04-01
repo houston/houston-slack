@@ -21,6 +21,8 @@ module Houston
                :bot,
                :typing_speed,
                :typing_speed=,
+               :ping,
+               :listening?,
                to: "connection"
 
       def connection
