@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.0
--- Dumped by pg_dump version 9.6.0
+-- Dumped from database version 10.5
+-- Dumped by pg_dump version 10.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET row_security = off;
@@ -29,26 +30,10 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
--- Name: hstore; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
-
-
---
--- Name: EXTENSION hstore; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION hstore IS 'data type for storing sets of (key, value) pairs';
-
-
-SET search_path = public, pg_catalog;
-
---
 -- Name: test_result_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE test_result_status AS ENUM (
+CREATE TYPE public.test_result_status AS ENUM (
     'fail',
     'skip',
     'pass'
@@ -63,15 +48,16 @@ SET default_with_oids = false;
 -- Name: actions; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE actions (
+CREATE TABLE public.actions (
     id integer NOT NULL,
     name character varying NOT NULL,
-    started_at timestamp without time zone NOT NULL,
+    started_at timestamp without time zone,
     finished_at timestamp without time zone,
     succeeded boolean,
     error_id integer,
     trigger character varying,
-    params text
+    params text,
+    created_at timestamp without time zone NOT NULL
 );
 
 
@@ -79,7 +65,7 @@ CREATE TABLE actions (
 -- Name: actions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE actions_id_seq
+CREATE SEQUENCE public.actions_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -91,14 +77,14 @@ CREATE SEQUENCE actions_id_seq
 -- Name: actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE actions_id_seq OWNED BY actions.id;
+ALTER SEQUENCE public.actions_id_seq OWNED BY public.actions.id;
 
 
 --
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE ar_internal_metadata (
+CREATE TABLE public.ar_internal_metadata (
     key character varying NOT NULL,
     value character varying,
     created_at timestamp without time zone NOT NULL,
@@ -110,10 +96,8 @@ CREATE TABLE ar_internal_metadata (
 -- Name: authorizations; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE authorizations (
+CREATE TABLE public.authorizations (
     id integer NOT NULL,
-    name character varying NOT NULL,
-    provider_id integer,
     scope character varying,
     access_token character varying,
     refresh_token character varying,
@@ -121,7 +105,10 @@ CREATE TABLE authorizations (
     expires_in integer,
     expires_at timestamp without time zone,
     created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    user_id integer NOT NULL,
+    props jsonb DEFAULT '{}'::jsonb,
+    type character varying NOT NULL
 );
 
 
@@ -129,7 +116,7 @@ CREATE TABLE authorizations (
 -- Name: authorizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE authorizations_id_seq
+CREATE SEQUENCE public.authorizations_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -141,14 +128,14 @@ CREATE SEQUENCE authorizations_id_seq
 -- Name: authorizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE authorizations_id_seq OWNED BY authorizations.id;
+ALTER SEQUENCE public.authorizations_id_seq OWNED BY public.authorizations.id;
 
 
 --
 -- Name: commits; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits (
+CREATE TABLE public.commits (
     id integer NOT NULL,
     release_id integer,
     sha character varying,
@@ -169,7 +156,7 @@ CREATE TABLE commits (
 -- Name: commits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE commits_id_seq
+CREATE SEQUENCE public.commits_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -181,14 +168,14 @@ CREATE SEQUENCE commits_id_seq
 -- Name: commits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE commits_id_seq OWNED BY commits.id;
+ALTER SEQUENCE public.commits_id_seq OWNED BY public.commits.id;
 
 
 --
 -- Name: commits_pull_requests; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits_pull_requests (
+CREATE TABLE public.commits_pull_requests (
     commit_id integer,
     pull_request_id integer
 );
@@ -198,7 +185,7 @@ CREATE TABLE commits_pull_requests (
 -- Name: commits_releases; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits_releases (
+CREATE TABLE public.commits_releases (
     commit_id integer,
     release_id integer
 );
@@ -208,7 +195,7 @@ CREATE TABLE commits_releases (
 -- Name: commits_tasks; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits_tasks (
+CREATE TABLE public.commits_tasks (
     commit_id integer,
     task_id integer
 );
@@ -218,7 +205,7 @@ CREATE TABLE commits_tasks (
 -- Name: commits_tickets; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits_tickets (
+CREATE TABLE public.commits_tickets (
     commit_id integer,
     ticket_id integer
 );
@@ -228,54 +215,17 @@ CREATE TABLE commits_tickets (
 -- Name: commits_users; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE commits_users (
+CREATE TABLE public.commits_users (
     commit_id integer,
     user_id integer
 );
 
 
 --
--- Name: consumer_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE consumer_tokens (
-    id integer NOT NULL,
-    user_id integer,
-    type character varying(30),
-    token character varying(1024),
-    refresh_token character varying,
-    secret character varying,
-    expires_at integer,
-    expires_in character varying,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
-);
-
-
---
--- Name: consumer_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE consumer_tokens_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: consumer_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE consumer_tokens_id_seq OWNED BY consumer_tokens.id;
-
-
---
 -- Name: deploys; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE deploys (
+CREATE TABLE public.deploys (
     id integer NOT NULL,
     project_id integer,
     sha character varying NOT NULL,
@@ -297,7 +247,7 @@ CREATE TABLE deploys (
 -- Name: deploys_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE deploys_id_seq
+CREATE SEQUENCE public.deploys_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -309,14 +259,14 @@ CREATE SEQUENCE deploys_id_seq
 -- Name: deploys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE deploys_id_seq OWNED BY deploys.id;
+ALTER SEQUENCE public.deploys_id_seq OWNED BY public.deploys.id;
 
 
 --
 -- Name: errors; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE errors (
+CREATE TABLE public.errors (
     id integer NOT NULL,
     sha character varying NOT NULL,
     message text NOT NULL,
@@ -331,7 +281,7 @@ CREATE TABLE errors (
 -- Name: errors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE errors_id_seq
+CREATE SEQUENCE public.errors_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -343,14 +293,45 @@ CREATE SEQUENCE errors_id_seq
 -- Name: errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE errors_id_seq OWNED BY errors.id;
+ALTER SEQUENCE public.errors_id_seq OWNED BY public.errors.id;
+
+
+--
+-- Name: follows; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.follows (
+    id integer NOT NULL,
+    user_id integer,
+    project_id integer
+);
+
+
+--
+-- Name: follows_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.follows_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: follows_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.follows_id_seq OWNED BY public.follows.id;
 
 
 --
 -- Name: measurements; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE measurements (
+CREATE TABLE public.measurements (
     id integer NOT NULL,
     subject_type character varying,
     subject_id integer,
@@ -367,7 +348,7 @@ CREATE TABLE measurements (
 -- Name: measurements_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE measurements_id_seq
+CREATE SEQUENCE public.measurements_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -379,21 +360,20 @@ CREATE SEQUENCE measurements_id_seq
 -- Name: measurements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE measurements_id_seq OWNED BY measurements.id;
+ALTER SEQUENCE public.measurements_id_seq OWNED BY public.measurements.id;
 
 
 --
 -- Name: milestones; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE milestones (
+CREATE TABLE public.milestones (
     id integer NOT NULL,
     project_id integer NOT NULL,
     remote_id integer,
     name character varying NOT NULL,
     tickets_count integer DEFAULT 0,
     completed_at timestamp without time zone,
-    extended_attributes hstore DEFAULT ''::hstore NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
     destroyed_at timestamp without time zone,
@@ -405,7 +385,7 @@ CREATE TABLE milestones (
 -- Name: milestones_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE milestones_id_seq
+CREATE SEQUENCE public.milestones_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -417,55 +397,20 @@ CREATE SEQUENCE milestones_id_seq
 -- Name: milestones_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE milestones_id_seq OWNED BY milestones.id;
-
-
---
--- Name: oauth_providers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE oauth_providers (
-    id integer NOT NULL,
-    name character varying NOT NULL,
-    site character varying NOT NULL,
-    authorize_path character varying NOT NULL,
-    token_path character varying NOT NULL,
-    client_id character varying NOT NULL,
-    client_secret character varying NOT NULL,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
-);
-
-
---
--- Name: oauth_providers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE oauth_providers_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: oauth_providers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE oauth_providers_id_seq OWNED BY oauth_providers.id;
+ALTER SEQUENCE public.milestones_id_seq OWNED BY public.milestones.id;
 
 
 --
 -- Name: persistent_triggers; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE persistent_triggers (
+CREATE TABLE public.persistent_triggers (
     id integer NOT NULL,
     type character varying NOT NULL,
     value text NOT NULL,
     params text DEFAULT '{}'::text NOT NULL,
-    action character varying NOT NULL
+    action character varying NOT NULL,
+    user_id integer NOT NULL
 );
 
 
@@ -473,7 +418,7 @@ CREATE TABLE persistent_triggers (
 -- Name: persistent_triggers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE persistent_triggers_id_seq
+CREATE SEQUENCE public.persistent_triggers_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -485,20 +430,20 @@ CREATE SEQUENCE persistent_triggers_id_seq
 -- Name: persistent_triggers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE persistent_triggers_id_seq OWNED BY persistent_triggers.id;
+ALTER SEQUENCE public.persistent_triggers_id_seq OWNED BY public.persistent_triggers.id;
 
 
 --
 -- Name: projects; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE projects (
+CREATE TABLE public.projects (
     id integer NOT NULL,
     name character varying NOT NULL,
     slug character varying NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
-    color character varying DEFAULT 'default'::character varying NOT NULL,
+    color_name character varying DEFAULT 'default'::character varying NOT NULL,
     retired_at timestamp without time zone,
     category character varying,
     version_control_name character varying DEFAULT 'None'::character varying NOT NULL,
@@ -518,7 +463,7 @@ CREATE TABLE projects (
 -- Name: projects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE projects_id_seq
+CREATE SEQUENCE public.projects_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -530,14 +475,14 @@ CREATE SEQUENCE projects_id_seq
 -- Name: projects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE projects_id_seq OWNED BY projects.id;
+ALTER SEQUENCE public.projects_id_seq OWNED BY public.projects.id;
 
 
 --
 -- Name: pull_requests; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE pull_requests (
+CREATE TABLE public.pull_requests (
     id integer NOT NULL,
     project_id integer NOT NULL,
     user_id integer,
@@ -565,7 +510,7 @@ CREATE TABLE pull_requests (
 -- Name: pull_requests_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE pull_requests_id_seq
+CREATE SEQUENCE public.pull_requests_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -577,14 +522,14 @@ CREATE SEQUENCE pull_requests_id_seq
 -- Name: pull_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE pull_requests_id_seq OWNED BY pull_requests.id;
+ALTER SEQUENCE public.pull_requests_id_seq OWNED BY public.pull_requests.id;
 
 
 --
 -- Name: releases; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE releases (
+CREATE TABLE public.releases (
     id integer NOT NULL,
     name character varying,
     commit0 character varying,
@@ -607,7 +552,7 @@ CREATE TABLE releases (
 -- Name: releases_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE releases_id_seq
+CREATE SEQUENCE public.releases_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -619,14 +564,14 @@ CREATE SEQUENCE releases_id_seq
 -- Name: releases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE releases_id_seq OWNED BY releases.id;
+ALTER SEQUENCE public.releases_id_seq OWNED BY public.releases.id;
 
 
 --
 -- Name: roles; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE roles (
+CREATE TABLE public.roles (
     id integer NOT NULL,
     user_id integer,
     project_id integer,
@@ -640,7 +585,7 @@ CREATE TABLE roles (
 -- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE roles_id_seq
+CREATE SEQUENCE public.roles_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -652,53 +597,23 @@ CREATE SEQUENCE roles_id_seq
 -- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE roles_id_seq OWNED BY roles.id;
+ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
 
 
 --
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE schema_migrations (
+CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
 );
-
-
---
--- Name: settings; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE settings (
-    id integer NOT NULL,
-    name character varying NOT NULL,
-    value character varying NOT NULL
-);
-
-
---
--- Name: settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE settings_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE settings_id_seq OWNED BY settings.id;
 
 
 --
 -- Name: sprints; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE sprints (
+CREATE TABLE public.sprints (
     id integer NOT NULL,
     end_date date,
     created_at timestamp without time zone,
@@ -711,7 +626,7 @@ CREATE TABLE sprints (
 -- Name: sprints_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE sprints_id_seq
+CREATE SEQUENCE public.sprints_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -723,14 +638,14 @@ CREATE SEQUENCE sprints_id_seq
 -- Name: sprints_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE sprints_id_seq OWNED BY sprints.id;
+ALTER SEQUENCE public.sprints_id_seq OWNED BY public.sprints.id;
 
 
 --
 -- Name: sprints_tasks; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE sprints_tasks (
+CREATE TABLE public.sprints_tasks (
     sprint_id integer NOT NULL,
     task_id integer NOT NULL,
     checked_out_at timestamp without time zone,
@@ -742,7 +657,7 @@ CREATE TABLE sprints_tasks (
 -- Name: tasks; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE tasks (
+CREATE TABLE public.tasks (
     id integer NOT NULL,
     ticket_id integer NOT NULL,
     number integer NOT NULL,
@@ -762,7 +677,7 @@ CREATE TABLE tasks (
 -- Name: tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE tasks_id_seq
+CREATE SEQUENCE public.tasks_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -774,14 +689,14 @@ CREATE SEQUENCE tasks_id_seq
 -- Name: tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE tasks_id_seq OWNED BY tasks.id;
+ALTER SEQUENCE public.tasks_id_seq OWNED BY public.tasks.id;
 
 
 --
 -- Name: teams; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE teams (
+CREATE TABLE public.teams (
     id integer NOT NULL,
     name character varying,
     props jsonb DEFAULT '{}'::jsonb
@@ -792,7 +707,7 @@ CREATE TABLE teams (
 -- Name: teams_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE teams_id_seq
+CREATE SEQUENCE public.teams_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -804,14 +719,14 @@ CREATE SEQUENCE teams_id_seq
 -- Name: teams_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
+ALTER SEQUENCE public.teams_id_seq OWNED BY public.teams.id;
 
 
 --
 -- Name: teams_users; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE teams_users (
+CREATE TABLE public.teams_users (
     id integer NOT NULL,
     team_id integer,
     user_id integer,
@@ -825,7 +740,7 @@ CREATE TABLE teams_users (
 -- Name: teams_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE teams_users_id_seq
+CREATE SEQUENCE public.teams_users_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -837,14 +752,14 @@ CREATE SEQUENCE teams_users_id_seq
 -- Name: teams_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE teams_users_id_seq OWNED BY teams_users.id;
+ALTER SEQUENCE public.teams_users_id_seq OWNED BY public.teams_users.id;
 
 
 --
 -- Name: test_errors; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE test_errors (
+CREATE TABLE public.test_errors (
     id integer NOT NULL,
     sha character varying,
     output text
@@ -855,7 +770,7 @@ CREATE TABLE test_errors (
 -- Name: test_errors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE test_errors_id_seq
+CREATE SEQUENCE public.test_errors_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -867,18 +782,18 @@ CREATE SEQUENCE test_errors_id_seq
 -- Name: test_errors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE test_errors_id_seq OWNED BY test_errors.id;
+ALTER SEQUENCE public.test_errors_id_seq OWNED BY public.test_errors.id;
 
 
 --
 -- Name: test_results; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE test_results (
+CREATE TABLE public.test_results (
     id integer NOT NULL,
     test_run_id integer NOT NULL,
     test_id integer NOT NULL,
-    status test_result_status NOT NULL,
+    status public.test_result_status NOT NULL,
     different boolean,
     duration double precision,
     error_id integer,
@@ -890,7 +805,7 @@ CREATE TABLE test_results (
 -- Name: test_results_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE test_results_id_seq
+CREATE SEQUENCE public.test_results_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -902,14 +817,14 @@ CREATE SEQUENCE test_results_id_seq
 -- Name: test_results_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE test_results_id_seq OWNED BY test_results.id;
+ALTER SEQUENCE public.test_results_id_seq OWNED BY public.test_results.id;
 
 
 --
 -- Name: test_runs; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE test_runs (
+CREATE TABLE public.test_runs (
     id integer NOT NULL,
     project_id integer NOT NULL,
     sha character varying NOT NULL,
@@ -940,7 +855,7 @@ CREATE TABLE test_runs (
 -- Name: test_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE test_runs_id_seq
+CREATE SEQUENCE public.test_runs_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -952,14 +867,14 @@ CREATE SEQUENCE test_runs_id_seq
 -- Name: test_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE test_runs_id_seq OWNED BY test_runs.id;
+ALTER SEQUENCE public.test_runs_id_seq OWNED BY public.test_runs.id;
 
 
 --
 -- Name: tests; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE tests (
+CREATE TABLE public.tests (
     id integer NOT NULL,
     project_id integer NOT NULL,
     suite character varying NOT NULL,
@@ -971,7 +886,7 @@ CREATE TABLE tests (
 -- Name: tests_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE tests_id_seq
+CREATE SEQUENCE public.tests_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -983,14 +898,14 @@ CREATE SEQUENCE tests_id_seq
 -- Name: tests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE tests_id_seq OWNED BY tests.id;
+ALTER SEQUENCE public.tests_id_seq OWNED BY public.tests.id;
 
 
 --
 -- Name: ticket_queues; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE ticket_queues (
+CREATE TABLE public.ticket_queues (
     id integer NOT NULL,
     ticket_id integer,
     queue character varying,
@@ -1004,7 +919,7 @@ CREATE TABLE ticket_queues (
 -- Name: ticket_queues_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE ticket_queues_id_seq
+CREATE SEQUENCE public.ticket_queues_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1016,14 +931,14 @@ CREATE SEQUENCE ticket_queues_id_seq
 -- Name: ticket_queues_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE ticket_queues_id_seq OWNED BY ticket_queues.id;
+ALTER SEQUENCE public.ticket_queues_id_seq OWNED BY public.ticket_queues.id;
 
 
 --
 -- Name: tickets; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE tickets (
+CREATE TABLE public.tickets (
     id integer NOT NULL,
     project_id integer,
     number integer NOT NULL,
@@ -1035,7 +950,6 @@ CREATE TABLE tickets (
     deployment character varying,
     last_release_at timestamp without time zone,
     expires_at timestamp without time zone,
-    extended_attributes hstore DEFAULT ''::hstore NOT NULL,
     antecedents text[],
     tags character varying[],
     type character varying,
@@ -1056,7 +970,7 @@ CREATE TABLE tickets (
 -- Name: tickets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE tickets_id_seq
+CREATE SEQUENCE public.tickets_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1068,14 +982,14 @@ CREATE SEQUENCE tickets_id_seq
 -- Name: tickets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE tickets_id_seq OWNED BY tickets.id;
+ALTER SEQUENCE public.tickets_id_seq OWNED BY public.tickets.id;
 
 
 --
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE user_credentials (
+CREATE TABLE public.user_credentials (
     id integer NOT NULL,
     user_id integer,
     service character varying,
@@ -1092,7 +1006,7 @@ CREATE TABLE user_credentials (
 -- Name: user_credentials_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE user_credentials_id_seq
+CREATE SEQUENCE public.user_credentials_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1104,14 +1018,14 @@ CREATE SEQUENCE user_credentials_id_seq
 -- Name: user_credentials_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE user_credentials_id_seq OWNED BY user_credentials.id;
+ALTER SEQUENCE public.user_credentials_id_seq OWNED BY public.user_credentials.id;
 
 
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE users (
+CREATE TABLE public.users (
     id integer NOT NULL,
     email character varying DEFAULT ''::character varying NOT NULL,
     encrypted_password character varying DEFAULT ''::character varying,
@@ -1131,15 +1045,12 @@ CREATE TABLE users (
     invitation_limit integer,
     invited_by_id integer,
     invited_by_type character varying,
-    legacy_role character varying DEFAULT 'Guest'::character varying,
     authentication_token character varying,
-    legacy_administrator boolean DEFAULT false,
     first_name character varying,
     last_name character varying,
     retired_at timestamp without time zone,
     email_addresses text[],
     invitation_created_at timestamp without time zone,
-    environments_subscribed_to text[] DEFAULT '{}'::text[] NOT NULL,
     current_project_id integer,
     nickname character varying,
     username character varying,
@@ -1152,7 +1063,7 @@ CREATE TABLE users (
 -- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE users_id_seq
+CREATE SEQUENCE public.users_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1164,14 +1075,14 @@ CREATE SEQUENCE users_id_seq
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE users_id_seq OWNED BY users.id;
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
 -- Name: versions; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE versions (
+CREATE TABLE public.versions (
     id integer NOT NULL,
     versioned_id integer,
     versioned_type character varying,
@@ -1191,7 +1102,7 @@ CREATE TABLE versions (
 -- Name: versions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE versions_id_seq
+CREATE SEQUENCE public.versions_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1203,210 +1114,196 @@ CREATE SEQUENCE versions_id_seq
 -- Name: versions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE versions_id_seq OWNED BY versions.id;
+ALTER SEQUENCE public.versions_id_seq OWNED BY public.versions.id;
 
 
 --
 -- Name: actions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY actions ALTER COLUMN id SET DEFAULT nextval('actions_id_seq'::regclass);
+ALTER TABLE ONLY public.actions ALTER COLUMN id SET DEFAULT nextval('public.actions_id_seq'::regclass);
 
 
 --
 -- Name: authorizations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY authorizations ALTER COLUMN id SET DEFAULT nextval('authorizations_id_seq'::regclass);
+ALTER TABLE ONLY public.authorizations ALTER COLUMN id SET DEFAULT nextval('public.authorizations_id_seq'::regclass);
 
 
 --
 -- Name: commits id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY commits ALTER COLUMN id SET DEFAULT nextval('commits_id_seq'::regclass);
-
-
---
--- Name: consumer_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY consumer_tokens ALTER COLUMN id SET DEFAULT nextval('consumer_tokens_id_seq'::regclass);
+ALTER TABLE ONLY public.commits ALTER COLUMN id SET DEFAULT nextval('public.commits_id_seq'::regclass);
 
 
 --
 -- Name: deploys id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY deploys ALTER COLUMN id SET DEFAULT nextval('deploys_id_seq'::regclass);
+ALTER TABLE ONLY public.deploys ALTER COLUMN id SET DEFAULT nextval('public.deploys_id_seq'::regclass);
 
 
 --
 -- Name: errors id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY errors ALTER COLUMN id SET DEFAULT nextval('errors_id_seq'::regclass);
+ALTER TABLE ONLY public.errors ALTER COLUMN id SET DEFAULT nextval('public.errors_id_seq'::regclass);
+
+
+--
+-- Name: follows id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows ALTER COLUMN id SET DEFAULT nextval('public.follows_id_seq'::regclass);
 
 
 --
 -- Name: measurements id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY measurements ALTER COLUMN id SET DEFAULT nextval('measurements_id_seq'::regclass);
+ALTER TABLE ONLY public.measurements ALTER COLUMN id SET DEFAULT nextval('public.measurements_id_seq'::regclass);
 
 
 --
 -- Name: milestones id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY milestones ALTER COLUMN id SET DEFAULT nextval('milestones_id_seq'::regclass);
-
-
---
--- Name: oauth_providers id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY oauth_providers ALTER COLUMN id SET DEFAULT nextval('oauth_providers_id_seq'::regclass);
+ALTER TABLE ONLY public.milestones ALTER COLUMN id SET DEFAULT nextval('public.milestones_id_seq'::regclass);
 
 
 --
 -- Name: persistent_triggers id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY persistent_triggers ALTER COLUMN id SET DEFAULT nextval('persistent_triggers_id_seq'::regclass);
+ALTER TABLE ONLY public.persistent_triggers ALTER COLUMN id SET DEFAULT nextval('public.persistent_triggers_id_seq'::regclass);
 
 
 --
 -- Name: projects id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY projects ALTER COLUMN id SET DEFAULT nextval('projects_id_seq'::regclass);
+ALTER TABLE ONLY public.projects ALTER COLUMN id SET DEFAULT nextval('public.projects_id_seq'::regclass);
 
 
 --
 -- Name: pull_requests id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY pull_requests ALTER COLUMN id SET DEFAULT nextval('pull_requests_id_seq'::regclass);
+ALTER TABLE ONLY public.pull_requests ALTER COLUMN id SET DEFAULT nextval('public.pull_requests_id_seq'::regclass);
 
 
 --
 -- Name: releases id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY releases ALTER COLUMN id SET DEFAULT nextval('releases_id_seq'::regclass);
+ALTER TABLE ONLY public.releases ALTER COLUMN id SET DEFAULT nextval('public.releases_id_seq'::regclass);
 
 
 --
 -- Name: roles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
-
-
---
--- Name: settings id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq'::regclass);
+ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
 
 
 --
 -- Name: sprints id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY sprints ALTER COLUMN id SET DEFAULT nextval('sprints_id_seq'::regclass);
+ALTER TABLE ONLY public.sprints ALTER COLUMN id SET DEFAULT nextval('public.sprints_id_seq'::regclass);
 
 
 --
 -- Name: tasks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tasks ALTER COLUMN id SET DEFAULT nextval('tasks_id_seq'::regclass);
+ALTER TABLE ONLY public.tasks ALTER COLUMN id SET DEFAULT nextval('public.tasks_id_seq'::regclass);
 
 
 --
 -- Name: teams id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
+ALTER TABLE ONLY public.teams ALTER COLUMN id SET DEFAULT nextval('public.teams_id_seq'::regclass);
 
 
 --
 -- Name: teams_users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY teams_users ALTER COLUMN id SET DEFAULT nextval('teams_users_id_seq'::regclass);
+ALTER TABLE ONLY public.teams_users ALTER COLUMN id SET DEFAULT nextval('public.teams_users_id_seq'::regclass);
 
 
 --
 -- Name: test_errors id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_errors ALTER COLUMN id SET DEFAULT nextval('test_errors_id_seq'::regclass);
+ALTER TABLE ONLY public.test_errors ALTER COLUMN id SET DEFAULT nextval('public.test_errors_id_seq'::regclass);
 
 
 --
 -- Name: test_results id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_results ALTER COLUMN id SET DEFAULT nextval('test_results_id_seq'::regclass);
+ALTER TABLE ONLY public.test_results ALTER COLUMN id SET DEFAULT nextval('public.test_results_id_seq'::regclass);
 
 
 --
 -- Name: test_runs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_runs ALTER COLUMN id SET DEFAULT nextval('test_runs_id_seq'::regclass);
+ALTER TABLE ONLY public.test_runs ALTER COLUMN id SET DEFAULT nextval('public.test_runs_id_seq'::regclass);
 
 
 --
 -- Name: tests id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tests ALTER COLUMN id SET DEFAULT nextval('tests_id_seq'::regclass);
+ALTER TABLE ONLY public.tests ALTER COLUMN id SET DEFAULT nextval('public.tests_id_seq'::regclass);
 
 
 --
 -- Name: ticket_queues id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY ticket_queues ALTER COLUMN id SET DEFAULT nextval('ticket_queues_id_seq'::regclass);
+ALTER TABLE ONLY public.ticket_queues ALTER COLUMN id SET DEFAULT nextval('public.ticket_queues_id_seq'::regclass);
 
 
 --
 -- Name: tickets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tickets ALTER COLUMN id SET DEFAULT nextval('tickets_id_seq'::regclass);
+ALTER TABLE ONLY public.tickets ALTER COLUMN id SET DEFAULT nextval('public.tickets_id_seq'::regclass);
 
 
 --
 -- Name: user_credentials id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_credentials_id_seq'::regclass);
+ALTER TABLE ONLY public.user_credentials ALTER COLUMN id SET DEFAULT nextval('public.user_credentials_id_seq'::regclass);
 
 
 --
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
 -- Name: versions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY versions ALTER COLUMN id SET DEFAULT nextval('versions_id_seq'::regclass);
+ALTER TABLE ONLY public.versions ALTER COLUMN id SET DEFAULT nextval('public.versions_id_seq'::regclass);
 
 
 --
 -- Name: actions actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY actions
+ALTER TABLE ONLY public.actions
     ADD CONSTRAINT actions_pkey PRIMARY KEY (id);
 
 
@@ -1414,7 +1311,7 @@ ALTER TABLE ONLY actions
 -- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY ar_internal_metadata
+ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
 
 
@@ -1422,7 +1319,7 @@ ALTER TABLE ONLY ar_internal_metadata
 -- Name: authorizations authorizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY authorizations
+ALTER TABLE ONLY public.authorizations
     ADD CONSTRAINT authorizations_pkey PRIMARY KEY (id);
 
 
@@ -1430,23 +1327,15 @@ ALTER TABLE ONLY authorizations
 -- Name: commits commits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY commits
+ALTER TABLE ONLY public.commits
     ADD CONSTRAINT commits_pkey PRIMARY KEY (id);
-
-
---
--- Name: consumer_tokens consumer_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY consumer_tokens
-    ADD CONSTRAINT consumer_tokens_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: deploys deploys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY deploys
+ALTER TABLE ONLY public.deploys
     ADD CONSTRAINT deploys_pkey PRIMARY KEY (id);
 
 
@@ -1454,15 +1343,23 @@ ALTER TABLE ONLY deploys
 -- Name: errors errors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY errors
+ALTER TABLE ONLY public.errors
     ADD CONSTRAINT errors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: follows follows_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows
+    ADD CONSTRAINT follows_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: measurements measurements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY measurements
+ALTER TABLE ONLY public.measurements
     ADD CONSTRAINT measurements_pkey PRIMARY KEY (id);
 
 
@@ -1470,23 +1367,15 @@ ALTER TABLE ONLY measurements
 -- Name: milestones milestones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY milestones
+ALTER TABLE ONLY public.milestones
     ADD CONSTRAINT milestones_pkey PRIMARY KEY (id);
-
-
---
--- Name: oauth_providers oauth_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY oauth_providers
-    ADD CONSTRAINT oauth_providers_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: persistent_triggers persistent_triggers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY persistent_triggers
+ALTER TABLE ONLY public.persistent_triggers
     ADD CONSTRAINT persistent_triggers_pkey PRIMARY KEY (id);
 
 
@@ -1494,7 +1383,7 @@ ALTER TABLE ONLY persistent_triggers
 -- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY projects
+ALTER TABLE ONLY public.projects
     ADD CONSTRAINT projects_pkey PRIMARY KEY (id);
 
 
@@ -1502,7 +1391,7 @@ ALTER TABLE ONLY projects
 -- Name: pull_requests pull_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY pull_requests
+ALTER TABLE ONLY public.pull_requests
     ADD CONSTRAINT pull_requests_pkey PRIMARY KEY (id);
 
 
@@ -1510,7 +1399,7 @@ ALTER TABLE ONLY pull_requests
 -- Name: releases releases_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY releases
+ALTER TABLE ONLY public.releases
     ADD CONSTRAINT releases_pkey PRIMARY KEY (id);
 
 
@@ -1518,23 +1407,15 @@ ALTER TABLE ONLY releases
 -- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY roles
+ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
-
-
---
--- Name: settings settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY settings
-    ADD CONSTRAINT settings_pkey PRIMARY KEY (id);
 
 
 --
 -- Name: sprints sprints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY sprints
+ALTER TABLE ONLY public.sprints
     ADD CONSTRAINT sprints_pkey PRIMARY KEY (id);
 
 
@@ -1542,7 +1423,7 @@ ALTER TABLE ONLY sprints
 -- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tasks
+ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
 
 
@@ -1550,7 +1431,7 @@ ALTER TABLE ONLY tasks
 -- Name: teams teams_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY teams
+ALTER TABLE ONLY public.teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
 
@@ -1558,7 +1439,7 @@ ALTER TABLE ONLY teams
 -- Name: teams_users teams_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY teams_users
+ALTER TABLE ONLY public.teams_users
     ADD CONSTRAINT teams_users_pkey PRIMARY KEY (id);
 
 
@@ -1566,7 +1447,7 @@ ALTER TABLE ONLY teams_users
 -- Name: test_errors test_errors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_errors
+ALTER TABLE ONLY public.test_errors
     ADD CONSTRAINT test_errors_pkey PRIMARY KEY (id);
 
 
@@ -1574,7 +1455,7 @@ ALTER TABLE ONLY test_errors
 -- Name: test_results test_results_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_results
+ALTER TABLE ONLY public.test_results
     ADD CONSTRAINT test_results_pkey PRIMARY KEY (id);
 
 
@@ -1582,7 +1463,7 @@ ALTER TABLE ONLY test_results
 -- Name: test_results test_results_unique_constraint; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_results
+ALTER TABLE ONLY public.test_results
     ADD CONSTRAINT test_results_unique_constraint UNIQUE (test_run_id, test_id);
 
 
@@ -1590,7 +1471,7 @@ ALTER TABLE ONLY test_results
 -- Name: test_runs test_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY test_runs
+ALTER TABLE ONLY public.test_runs
     ADD CONSTRAINT test_runs_pkey PRIMARY KEY (id);
 
 
@@ -1598,7 +1479,7 @@ ALTER TABLE ONLY test_runs
 -- Name: tests tests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tests
+ALTER TABLE ONLY public.tests
     ADD CONSTRAINT tests_pkey PRIMARY KEY (id);
 
 
@@ -1606,7 +1487,7 @@ ALTER TABLE ONLY tests
 -- Name: tests tests_unique_constraint; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tests
+ALTER TABLE ONLY public.tests
     ADD CONSTRAINT tests_unique_constraint UNIQUE (project_id, suite, name);
 
 
@@ -1614,7 +1495,7 @@ ALTER TABLE ONLY tests
 -- Name: ticket_queues ticket_queues_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY ticket_queues
+ALTER TABLE ONLY public.ticket_queues
     ADD CONSTRAINT ticket_queues_pkey PRIMARY KEY (id);
 
 
@@ -1622,7 +1503,7 @@ ALTER TABLE ONLY ticket_queues
 -- Name: tickets tickets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tickets
+ALTER TABLE ONLY public.tickets
     ADD CONSTRAINT tickets_pkey PRIMARY KEY (id);
 
 
@@ -1630,7 +1511,7 @@ ALTER TABLE ONLY tickets
 -- Name: user_credentials user_credentials_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY user_credentials
+ALTER TABLE ONLY public.user_credentials
     ADD CONSTRAINT user_credentials_pkey PRIMARY KEY (id);
 
 
@@ -1638,7 +1519,7 @@ ALTER TABLE ONLY user_credentials
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY users
+ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 
@@ -1646,7 +1527,7 @@ ALTER TABLE ONLY users
 -- Name: versions versions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY versions
+ALTER TABLE ONLY public.versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (id);
 
 
@@ -1654,406 +1535,444 @@ ALTER TABLE ONLY versions
 -- Name: index_actions_on_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_actions_on_name ON actions USING btree (name);
+CREATE INDEX index_actions_on_name ON public.actions USING btree (name);
+
+
+--
+-- Name: index_authorizations_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_authorizations_on_user_id ON public.authorizations USING btree (user_id);
 
 
 --
 -- Name: index_commits_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_commits_on_project_id ON commits USING btree (project_id);
+CREATE INDEX index_commits_on_project_id ON public.commits USING btree (project_id);
 
 
 --
 -- Name: index_commits_on_sha; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_on_sha ON commits USING btree (sha);
+CREATE UNIQUE INDEX index_commits_on_sha ON public.commits USING btree (sha);
 
 
 --
 -- Name: index_commits_on_unreachable; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_commits_on_unreachable ON commits USING btree (unreachable);
+CREATE INDEX index_commits_on_unreachable ON public.commits USING btree (unreachable);
 
 
 --
 -- Name: index_commits_pull_requests_on_commit_id_and_pull_request_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_pull_requests_on_commit_id_and_pull_request_id ON commits_pull_requests USING btree (commit_id, pull_request_id);
+CREATE UNIQUE INDEX index_commits_pull_requests_on_commit_id_and_pull_request_id ON public.commits_pull_requests USING btree (commit_id, pull_request_id);
 
 
 --
 -- Name: index_commits_releases_on_commit_id_and_release_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_releases_on_commit_id_and_release_id ON commits_releases USING btree (commit_id, release_id);
+CREATE UNIQUE INDEX index_commits_releases_on_commit_id_and_release_id ON public.commits_releases USING btree (commit_id, release_id);
 
 
 --
 -- Name: index_commits_tasks_on_commit_id_and_task_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_tasks_on_commit_id_and_task_id ON commits_tasks USING btree (commit_id, task_id);
+CREATE UNIQUE INDEX index_commits_tasks_on_commit_id_and_task_id ON public.commits_tasks USING btree (commit_id, task_id);
 
 
 --
 -- Name: index_commits_tickets_on_commit_id_and_ticket_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_tickets_on_commit_id_and_ticket_id ON commits_tickets USING btree (commit_id, ticket_id);
+CREATE UNIQUE INDEX index_commits_tickets_on_commit_id_and_ticket_id ON public.commits_tickets USING btree (commit_id, ticket_id);
 
 
 --
 -- Name: index_commits_users_on_commit_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_commits_users_on_commit_id_and_user_id ON commits_users USING btree (commit_id, user_id);
-
-
---
--- Name: index_consumer_tokens_on_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_consumer_tokens_on_token ON consumer_tokens USING btree (token);
+CREATE UNIQUE INDEX index_commits_users_on_commit_id_and_user_id ON public.commits_users USING btree (commit_id, user_id);
 
 
 --
 -- Name: index_deploys_on_environment_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_deploys_on_environment_name ON deploys USING btree (environment_name);
+CREATE INDEX index_deploys_on_environment_name ON public.deploys USING btree (environment_name);
 
 
 --
 -- Name: index_deploys_on_project_id_and_environment_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_deploys_on_project_id_and_environment_name ON deploys USING btree (project_id, environment_name);
+CREATE INDEX index_deploys_on_project_id_and_environment_name ON public.deploys USING btree (project_id, environment_name);
 
 
 --
 -- Name: index_errors_on_sha; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_errors_on_sha ON errors USING btree (sha);
+CREATE UNIQUE INDEX index_errors_on_sha ON public.errors USING btree (sha);
+
+
+--
+-- Name: index_follows_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_follows_on_project_id ON public.follows USING btree (project_id);
+
+
+--
+-- Name: index_follows_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_follows_on_user_id ON public.follows USING btree (user_id);
 
 
 --
 -- Name: index_measurements_on_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_measurements_on_name ON measurements USING btree (name);
+CREATE INDEX index_measurements_on_name ON public.measurements USING btree (name);
 
 
 --
 -- Name: index_measurements_on_subject_type_and_subject_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_measurements_on_subject_type_and_subject_id ON measurements USING btree (subject_type, subject_id);
+CREATE INDEX index_measurements_on_subject_type_and_subject_id ON public.measurements USING btree (subject_type, subject_id);
 
 
 --
 -- Name: index_measurements_on_taken_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_measurements_on_taken_at ON measurements USING btree (taken_at);
+CREATE INDEX index_measurements_on_taken_at ON public.measurements USING btree (taken_at);
 
 
 --
 -- Name: index_measurements_on_taken_on; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_measurements_on_taken_on ON measurements USING btree (taken_on);
+CREATE INDEX index_measurements_on_taken_on ON public.measurements USING btree (taken_on);
 
 
 --
 -- Name: index_milestones_on_destroyed_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_milestones_on_destroyed_at ON milestones USING btree (destroyed_at);
+CREATE INDEX index_milestones_on_destroyed_at ON public.milestones USING btree (destroyed_at);
 
 
 --
 -- Name: index_milestones_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_milestones_on_project_id ON milestones USING btree (project_id);
+CREATE INDEX index_milestones_on_project_id ON public.milestones USING btree (project_id);
 
 
 --
 -- Name: index_projects_on_slug; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_projects_on_slug ON projects USING btree (slug);
+CREATE UNIQUE INDEX index_projects_on_slug ON public.projects USING btree (slug);
 
 
 --
 -- Name: index_pull_requests_on_closed_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_pull_requests_on_closed_at ON pull_requests USING btree (closed_at);
+CREATE INDEX index_pull_requests_on_closed_at ON public.pull_requests USING btree (closed_at);
 
 
 --
 -- Name: index_pull_requests_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_pull_requests_on_project_id ON pull_requests USING btree (project_id);
+CREATE INDEX index_pull_requests_on_project_id ON public.pull_requests USING btree (project_id);
 
 
 --
 -- Name: index_pull_requests_on_project_id_and_number; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_pull_requests_on_project_id_and_number ON pull_requests USING btree (project_id, number);
+CREATE UNIQUE INDEX index_pull_requests_on_project_id_and_number ON public.pull_requests USING btree (project_id, number);
 
 
 --
 -- Name: index_releases_on_deploy_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_releases_on_deploy_id ON releases USING btree (deploy_id);
+CREATE INDEX index_releases_on_deploy_id ON public.releases USING btree (deploy_id);
 
 
 --
 -- Name: index_releases_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_releases_on_project_id ON releases USING btree (project_id);
+CREATE INDEX index_releases_on_project_id ON public.releases USING btree (project_id);
 
 
 --
 -- Name: index_releases_on_project_id_and_environment_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_releases_on_project_id_and_environment_name ON releases USING btree (project_id, environment_name);
+CREATE INDEX index_releases_on_project_id_and_environment_name ON public.releases USING btree (project_id, environment_name);
 
 
 --
 -- Name: index_releases_on_search_vector; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_releases_on_search_vector ON releases USING gin (search_vector);
+CREATE INDEX index_releases_on_search_vector ON public.releases USING gin (search_vector);
 
 
 --
 -- Name: index_roles_on_user_id_and_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_roles_on_user_id_and_project_id ON roles USING btree (user_id, project_id);
+CREATE INDEX index_roles_on_user_id_and_project_id ON public.roles USING btree (user_id, project_id);
 
 
 --
 -- Name: index_roles_on_user_id_and_project_id_and_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_roles_on_user_id_and_project_id_and_name ON roles USING btree (user_id, project_id, name);
+CREATE INDEX index_roles_on_user_id_and_project_id_and_name ON public.roles USING btree (user_id, project_id, name);
 
 
 --
 -- Name: index_sprints_on_end_date; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_sprints_on_end_date ON sprints USING btree (end_date);
+CREATE UNIQUE INDEX index_sprints_on_end_date ON public.sprints USING btree (end_date);
 
 
 --
 -- Name: index_sprints_tasks_on_sprint_id_and_task_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_sprints_tasks_on_sprint_id_and_task_id ON sprints_tasks USING btree (sprint_id, task_id);
+CREATE UNIQUE INDEX index_sprints_tasks_on_sprint_id_and_task_id ON public.sprints_tasks USING btree (sprint_id, task_id);
 
 
 --
 -- Name: index_tasks_on_ticket_id_and_number; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_tasks_on_ticket_id_and_number ON tasks USING btree (ticket_id, number);
+CREATE UNIQUE INDEX index_tasks_on_ticket_id_and_number ON public.tasks USING btree (ticket_id, number);
 
 
 --
 -- Name: index_teams_users_on_team_id_and_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_teams_users_on_team_id_and_user_id ON teams_users USING btree (team_id, user_id);
+CREATE UNIQUE INDEX index_teams_users_on_team_id_and_user_id ON public.teams_users USING btree (team_id, user_id);
 
 
 --
 -- Name: index_test_errors_on_sha; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_test_errors_on_sha ON test_errors USING btree (sha);
+CREATE UNIQUE INDEX index_test_errors_on_sha ON public.test_errors USING btree (sha);
 
 
 --
 -- Name: index_test_results_on_test_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_test_results_on_test_id ON test_results USING btree (test_id);
+CREATE INDEX index_test_results_on_test_id ON public.test_results USING btree (test_id);
 
 
 --
 -- Name: index_test_results_on_test_run_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_test_results_on_test_run_id ON test_results USING btree (test_run_id);
+CREATE INDEX index_test_results_on_test_run_id ON public.test_results USING btree (test_run_id);
 
 
 --
 -- Name: index_test_runs_on_commit_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_test_runs_on_commit_id ON test_runs USING btree (commit_id);
+CREATE UNIQUE INDEX index_test_runs_on_commit_id ON public.test_runs USING btree (commit_id);
 
 
 --
 -- Name: index_test_runs_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_test_runs_on_project_id ON test_runs USING btree (project_id);
+CREATE INDEX index_test_runs_on_project_id ON public.test_runs USING btree (project_id);
 
 
 --
 -- Name: index_test_runs_on_sha; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_test_runs_on_sha ON test_runs USING btree (sha);
+CREATE UNIQUE INDEX index_test_runs_on_sha ON public.test_runs USING btree (sha);
 
 
 --
 -- Name: index_tests_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_tests_on_project_id ON tests USING btree (project_id);
+CREATE INDEX index_tests_on_project_id ON public.tests USING btree (project_id);
 
 
 --
 -- Name: index_ticket_queues_on_queue; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_ticket_queues_on_queue ON ticket_queues USING btree (queue);
+CREATE INDEX index_ticket_queues_on_queue ON public.ticket_queues USING btree (queue);
 
 
 --
 -- Name: index_ticket_queues_on_ticket_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_ticket_queues_on_ticket_id ON ticket_queues USING btree (ticket_id);
+CREATE INDEX index_ticket_queues_on_ticket_id ON public.ticket_queues USING btree (ticket_id);
 
 
 --
 -- Name: index_tickets_on_destroyed_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_tickets_on_destroyed_at ON tickets USING btree (destroyed_at);
+CREATE INDEX index_tickets_on_destroyed_at ON public.tickets USING btree (destroyed_at);
 
 
 --
 -- Name: index_tickets_on_milestone_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_tickets_on_milestone_id ON tickets USING btree (milestone_id);
+CREATE INDEX index_tickets_on_milestone_id ON public.tickets USING btree (milestone_id);
 
 
 --
 -- Name: index_tickets_on_resolution; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_tickets_on_resolution ON tickets USING btree (resolution);
+CREATE INDEX index_tickets_on_resolution ON public.tickets USING btree (resolution);
 
 
 --
 -- Name: index_users_on_authentication_token; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_users_on_authentication_token ON users USING btree (authentication_token);
+CREATE INDEX index_users_on_authentication_token ON public.users USING btree (authentication_token);
 
 
 --
 -- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_email ON users USING btree (email);
+CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 
 
 --
 -- Name: index_users_on_email_addresses; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_users_on_email_addresses ON users USING btree (email_addresses);
+CREATE INDEX index_users_on_email_addresses ON public.users USING btree (email_addresses);
 
 
 --
 -- Name: index_users_on_invitation_token; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_users_on_invitation_token ON users USING btree (invitation_token);
+CREATE INDEX index_users_on_invitation_token ON public.users USING btree (invitation_token);
 
 
 --
 -- Name: index_users_on_invited_by_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_users_on_invited_by_id ON users USING btree (invited_by_id);
+CREATE INDEX index_users_on_invited_by_id ON public.users USING btree (invited_by_id);
 
 
 --
 -- Name: index_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_reset_password_token ON users USING btree (reset_password_token);
+CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING btree (reset_password_token);
 
 
 --
 -- Name: index_versions_on_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_created_at ON versions USING btree (created_at);
+CREATE INDEX index_versions_on_created_at ON public.versions USING btree (created_at);
 
 
 --
 -- Name: index_versions_on_number; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_number ON versions USING btree (number);
+CREATE INDEX index_versions_on_number ON public.versions USING btree (number);
 
 
 --
 -- Name: index_versions_on_tag; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_tag ON versions USING btree (tag);
+CREATE INDEX index_versions_on_tag ON public.versions USING btree (tag);
 
 
 --
 -- Name: index_versions_on_user_id_and_user_type; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_user_id_and_user_type ON versions USING btree (user_id, user_type);
+CREATE INDEX index_versions_on_user_id_and_user_type ON public.versions USING btree (user_id, user_type);
 
 
 --
 -- Name: index_versions_on_user_name; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_user_name ON versions USING btree (user_name);
+CREATE INDEX index_versions_on_user_name ON public.versions USING btree (user_name);
 
 
 --
 -- Name: index_versions_on_versioned_id_and_versioned_type; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_versions_on_versioned_id_and_versioned_type ON versions USING btree (versioned_id, versioned_type);
+CREATE INDEX index_versions_on_versioned_id_and_versioned_type ON public.versions USING btree (versioned_id, versioned_type);
 
 
 --
 -- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (version);
+CREATE UNIQUE INDEX unique_schema_migrations ON public.schema_migrations USING btree (version);
+
+
+--
+-- Name: follows fk_rails_32479bd030; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows
+    ADD CONSTRAINT fk_rails_32479bd030 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: authorizations fk_rails_4ecef5b8c5; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.authorizations
+    ADD CONSTRAINT fk_rails_4ecef5b8c5 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: follows fk_rails_572bf69092; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.follows
+    ADD CONSTRAINT fk_rails_572bf69092 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -2062,7 +1981,7 @@ CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (v
 
 SET search_path TO "$user", public;
 
-INSERT INTO schema_migrations (version) VALUES
+INSERT INTO "schema_migrations" (version) VALUES
 ('20120324185914'),
 ('20120324202224'),
 ('20120324212848'),
@@ -2272,6 +2191,20 @@ INSERT INTO schema_migrations (version) VALUES
 ('20170115150643'),
 ('20170116002818'),
 ('20170116210225'),
-('20170118005958');
+('20170118005958'),
+('20170130011016'),
+('20170205004452'),
+('20170206002030'),
+('20170206002732'),
+('20170209022159'),
+('20170213001453'),
+('20170215012012'),
+('20170216041034'),
+('20170226201504'),
+('20170301014051'),
+('20170307032041'),
+('20170307035755'),
+('20170310024505'),
+('20170329030329');
 
 
